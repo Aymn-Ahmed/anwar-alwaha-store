@@ -2,7 +2,10 @@
 // MAKTABAH - Product Card & Grid Components (js/ProductCard.js)
 // =========================================================================
 
-    function ProductCard({ product, onSelect, reviews, isFavorite = false, onToggleFavorite = null }) {
+    const FALLBACK_IMG = window.FALLBACK_IMG || '';
+const PriceTag = window.PriceTag;
+
+function ProductCard({ product, onSelect, reviews, isFavorite = false, onToggleFavorite = null }) {
       if (!product) return null;
 
       const prodReviews = (reviews && reviews.length ? reviews : (window.ALL_APPROVED_REVIEWS || [])).filter(r => r.product_id === product.id);

@@ -2,6 +2,9 @@
 // MAKTABAH - Cart Drawer & Checkout Component (js/CartDrawer.js)
 // =========================================================================
 
+const FALLBACK_IMG = window.FALLBACK_IMG || '';
+const PriceTag = window.PriceTag;
+
 function CartDrawer(props) {
   const {
     cartItems = [],
@@ -32,7 +35,13 @@ function CartDrawer(props) {
     showToast,
     setActiveNavTab,
     setSelectedProduct,
-    activeProducts = []
+    activeProducts = [],
+    removeFromCart = props.removeFromCart,
+    updateItemQuantity = props.updateItemQuantity,
+    updateItemNotes = props.updateItemNotes,
+    cartComplements = props.cartComplements || [],
+    addToCart = props.addToCart,
+    userProfile = props.userProfile || {}
   } = props;
 
   return (

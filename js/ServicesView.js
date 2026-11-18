@@ -407,6 +407,9 @@
     // =========================================================================
     // مكون بطاقة المنتج (ProductCard Molecule)
 
+const FALLBACK_IMG = window.FALLBACK_IMG || '';
+const extractTikTokVideoId = window.extractTikTokVideoId;
+
 function ServicesView(props) {
   const {
     activeServices = [],

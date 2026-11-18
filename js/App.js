@@ -3,6 +3,8 @@
 // =========================================================================
 
 function App() {
+  const React = window.React;
+  const { useState, useEffect, useMemo, useRef } = React;
   const PRODUCTS = window.PRODUCTS || [];
   const SERVICES_DATA = window.SERVICES_DATA || [];
   const MAKTABAH_15_CATEGORIES = window.MAKTABAH_15_CATEGORIES || [];
@@ -468,8 +470,21 @@ function App() {
       const handleAddToCartWithQty = () => {
         if (!selectedProduct) return;
         addToCart(selectedProduct, selectedQuantity);
-        confetti({ particleCount: 35, spread: 60 });
+        if (typeof confetti === 'function') confetti({ particleCount: 35, spread: 60 });
       };
+
+      // دالة الإضافة العامة للسلة (تدعم تمرير منتج مباشر أو الصنف المختار حالياً)
+      const handleAddToCart = (product, qty = 1, notes = '') => {
+        if (product && product.id) {
+          addToCart(product, qty, notes);
+          if (typeof confetti === 'function') confetti({ particleCount: 30, spread: 55 });
+        } else if (selectedProduct) {
+          handleAddToCartWithQty();
+        }
+      };
+
+      const isInstantOrdering = isSubmittingOrder;
+      const handleInstantOrder = () => handleSubmitOrderDirectly();
 
       const addServiceToCart = (serviceItem) => {
         addToCart(serviceItem, 1);
@@ -1230,10 +1245,13 @@ function App() {
             {selectedProduct ? (
               <ProductModal
                 product={selectedProduct}
+                selectedProduct={selectedProduct}
                 onClose={() => setSelectedProduct(null)}
+                setSelectedProduct={setSelectedProduct}
                 onOpenBag={() => { setSelectedProduct(null); setActiveNavTab('bag'); }}
                 totalCartQuantity={totalCartQuantity}
                 allProducts={activeProducts}
+                activeProducts={activeProducts}
                 allApprovedReviews={allApprovedReviews}
                 cartItems={cartItems}
                 setCartItems={setCartItems}
@@ -1242,6 +1260,7 @@ function App() {
                 showToast={showToast}
                 confetti={confetti}
                 onSelectCategory={handleSelectCategory}
+                handleSelectCategory={handleSelectCategory}
                 activeBundle={activeBundle}
                 setActiveBundle={setActiveBundle}
                 selectedQuantity={selectedQuantity}
@@ -1260,6 +1279,11 @@ function App() {
                 productDetailsRef={productDetailsRef}
                 activeCategoryFilter={activeCategoryFilter}
                 setActiveNavTab={setActiveNavTab}
+                handleAddFullBundle={handleAddFullBundle}
+                functionalComplements={functionalComplements}
+                recommendedProducts={recommendedProducts}
+                handleSelectRecommendedProduct={handleSelectRecommendedProduct}
+                complementaryProducts={complementaryProducts}
               />
             ) : (
               <div>
@@ -1612,6 +1636,12 @@ function App() {
                     setActiveNavTab={setActiveNavTab}
                     setSelectedProduct={setSelectedProduct}
                     activeProducts={activeProducts}
+                    removeFromCart={removeFromCart}
+                    updateItemQuantity={updateItemQuantity}
+                    updateItemNotes={updateItemNotes}
+                    cartComplements={cartComplements}
+                    addToCart={addToCart}
+                    userProfile={userProfile}
                   />
                 )}
 
@@ -1648,6 +1678,15 @@ function App() {
                     setPreviewReviewMedia={setPreviewReviewMedia}
                     setActiveNavTab={setActiveNavTab}
                     setSelectedProduct={setSelectedProduct}
+                    activeOrdersCount={activeOrdersCount}
+                    setShowFavoritesModal={setShowFavoritesModal}
+                    favorites={favorites}
+                    handleSearchOrder={handleSearchOrder}
+                    orderSearchCode={orderSearchCode}
+                    setOrderSearchCode={setOrderSearchCode}
+                    orderSearchLoading={orderSearchLoading}
+                    setSelectedService={setSelectedService}
+                    openReviewModal={openReviewModal}
                   />
                 )}
               </div>

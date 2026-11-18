@@ -2,8 +2,12 @@
 // MAKTABAH - Product Detail Modal Component (js/ProductModal.js)
 // =========================================================================
 
+const FALLBACK_IMG = window.FALLBACK_IMG || '';
+const PriceTag = window.PriceTag;
+const SarSymbol = window.SarSymbol;
+const ProductCard = window.ProductCard;
+
 function ProductModal(props) {
-  const ProductCard = window.ProductCard;
   const {
     product,
     selectedProduct = product,
@@ -32,14 +36,19 @@ function ProductModal(props) {
     addToCart = props.addToCart || handleAddToCart,
     handleAddToCartWithQty = props.handleAddToCartWithQty || handleAddToCart,
     handleInstantOrder,
-    isInstantOrdering,
+    isInstantOrdering = false,
     productReviewFilter,
     setProductReviewFilter,
     previewReviewMedia,
     setPreviewReviewMedia,
     productDetailsRef,
     activeCategoryFilter,
-    setActiveNavTab
+    setActiveNavTab,
+    handleAddFullBundle = props.handleAddFullBundle,
+    functionalComplements = props.functionalComplements || [],
+    recommendedProducts = props.recommendedProducts || [],
+    handleSelectRecommendedProduct = props.handleSelectRecommendedProduct,
+    complementaryProducts = props.complementaryProducts || []
   } = props;
 
   if (!selectedProduct) return null;

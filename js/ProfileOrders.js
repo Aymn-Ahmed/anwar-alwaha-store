@@ -2,6 +2,9 @@
 // MAKTABAH - Profile & Orders View Component (js/ProfileOrders.js)
 // =========================================================================
 
+const FALLBACK_IMG = window.FALLBACK_IMG || '';
+const ORDER_TRACKING_STAGES = window.ORDER_TRACKING_STAGES || [];
+
 function ProfileOrders(props) {
   const {
     userProfile = {},
@@ -33,7 +36,16 @@ function ProfileOrders(props) {
     previewReviewMedia,
     setPreviewReviewMedia,
     setActiveNavTab,
-    setSelectedProduct
+    setSelectedProduct,
+    activeOrdersCount = props.activeOrdersCount || 0,
+    setShowFavoritesModal = props.setShowFavoritesModal,
+    favorites = props.favorites || [],
+    handleSearchOrder = props.handleSearchOrder,
+    orderSearchCode = props.orderSearchCode || '',
+    setOrderSearchCode = props.setOrderSearchCode,
+    orderSearchLoading = props.orderSearchLoading || false,
+    setSelectedService = props.setSelectedService,
+    openReviewModal = props.openReviewModal
   } = props;
 
   return (
