@@ -429,6 +429,7 @@
       const [password, setPassword] = useState('');
       const [authError, setAuthError] = useState('');
       const [isLoggingIn, setIsLoggingIn] = useState(false);
+      const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
 
       // تبويبات لوحة التحكم
       const [activeTab, setActiveTab] = useState('overview');
@@ -969,6 +970,44 @@
           showToast("تم تسجيل الدخول بنجاح! مرحباً بك");
         } catch (err) {
           setAuthError(err.message || 'فشل تسجيل الدخول، تأكد من بياناتك');
+        } finally {
+          setIsLoggingIn(false);
+        }
+      };
+
+      // إنشاء حساب مسؤول جديد
+      const handleSignUp = async (e) => {
+        e.preventDefault();
+        if (!email.trim() || !password.trim()) {
+          setAuthError('يرجى كتابة البريد الإلكتروني وكلمة المرور');
+          return;
+        }
+        if (password.length < 6) {
+          setAuthError('كلمة المرور يجب أن لا تقل عن 6 أحرف/أرقام');
+          return;
+        }
+
+        setIsLoggingIn(true);
+        setAuthError('');
+
+        try {
+          const { data, error } = await supabaseClient.auth.signUp({
+            email: email.trim(),
+            password: password
+          });
+
+          if (error) throw error;
+
+          if (data.session) {
+            setSession(data.session);
+            showToast("تم إنشاء الحساب وتسجيل الدخول بنجاح! مرحباً بك 🚀");
+          } else {
+            showToast("تم تسجيل الحساب! إذا كان تأكيد البريد مفعلاً في Supabase يرجى مراجعته أو تسجيل الدخول.", "info");
+            setAuthMode('login');
+          }
+        } catch (err) {
+          console.error("Sign up error:", err);
+          setAuthError(err.message || 'تعذر إنشاء الحساب');
         } finally {
           setIsLoggingIn(false);
         }
@@ -2175,13 +2214,39 @@
                 <p className="text-xs text-zinc-500 mt-1">مكتبة أنوار الواحة • إدارة الأصناف والأقسام</p>
               </div>
 
+              {/* تبديل الوضع بين تسجيل الدخول وإنشاء حساب جديد */}
+              <div className="flex bg-zinc-100 p-1 rounded-2xl mb-5">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('login'); setAuthError(''); }}
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                    authMode === 'login'
+                      ? 'bg-white text-zinc-900 shadow-2xs'
+                      : 'text-zinc-500 hover:text-zinc-900'
+                  }`}
+                >
+                  تسجيل الدخول
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('signup'); setAuthError(''); }}
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                    authMode === 'signup'
+                      ? 'bg-white text-zinc-900 shadow-2xs'
+                      : 'text-zinc-500 hover:text-zinc-900'
+                  }`}
+                >
+                  إنشاء حساب مسؤول جديد
+                </button>
+              </div>
+
               {authError && (
                 <div className="bg-red-50 border border-red-200 text-[#c40d00] text-xs font-bold rounded-xl p-3 mb-4 text-center">
                   {authError}
                 </div>
               )}
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={authMode === 'login' ? handleLogin : handleSignUp} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-zinc-700 mb-1.5">البريد الإلكتروني للمسؤول:</label>
                   <input
@@ -2204,6 +2269,9 @@
                     placeholder="••••••••"
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:border-[#c40d00] transition-colors"
                   />
+                  {authMode === 'signup' && (
+                    <span className="text-[10px] text-zinc-400 mt-1 block">كلمة المرور يجب أن لا تقل عن 6 أحرف/أرقام.</span>
+                  )}
                 </div>
 
                 <button
@@ -2216,8 +2284,10 @@
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       <span>جاري التحقق...</span>
                     </>
-                  ) : (
+                  ) : authMode === 'login' ? (
                     <span>دخول إلى لوحة التحكم ←</span>
+                  ) : (
+                    <span>إنشاء حساب والدخول ←</span>
                   )}
                 </button>
               </form>
