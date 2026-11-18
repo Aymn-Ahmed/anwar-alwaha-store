@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+dist/
+
+# Backups
+*.backup.html
+*.backup.*
+
+# Temp search dumps & logs
+dom_dump.txt
+bing.html
+bing_ar_rss.xml
+bing_rss.xml
+ddg*.html
+google.html
+haraj.html
+yahoo.html
+yandex.html
+mojeek.html
+tiktok_fb.html
+video1_fb.html
+embed_v3.html
+player.html
+tikwm_user.json
+user_node.json
+oembed_video1.json
+*.log
+
+# OS metadata
+.DS_Store
+Thumbs.db
