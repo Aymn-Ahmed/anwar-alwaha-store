@@ -1,4 +1,4 @@
-﻿// =========================================================================
+// =========================================================================
 // MAKTABAH - Main App Component (js/App.js)
 // =========================================================================
 
@@ -1151,10 +1151,14 @@ function App() {
                   <span>دعم واتساب (0572350050)</span>
                 </a>
 
-                <a href=" admin.html\ className=\bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors\ title=\لوحة تحكم المسؤول\>
- <span>⚙️</span>
- <span className=\hidden lg:inline\>لوحة الإدارة</span>
- </a>
+                <a 
+                  href="admin.html" 
+                  className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors" 
+                  title="لوحة تحكم المسؤول"
+                >
+                  <span>⚙️</span>
+                  <span className="hidden lg:inline">لوحة الإدارة</span>
+                </a>
 
                 <button
                   onClick={() => {

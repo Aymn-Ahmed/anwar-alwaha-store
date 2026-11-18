@@ -1,4 +1,4 @@
-﻿// =========================================================================
+// =========================================================================
 // MAKTABAH - Profile & Orders View Component (js/ProfileOrders.js)
 // =========================================================================
 
@@ -84,14 +84,17 @@ function ProfileOrders(props) {
                       </div>
 
                       {/* زر الانتقال المباشر للوحة التحكم للمسؤولين */}
-                      <div className=" mt-4 pt-3 border-t border-red-100/70 flex items-center justify-between flex-wrap gap-2\>
- <span className=\text-[11px] text-zinc-500 font-semibold\>هل أنت مسؤول أو مدير المتجر؟</span>
- <a href=\admin.html\ className=\py-1.5 px-3 bg-zinc-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-colors shadow-2xs flex items-center gap-1.5\>
- <span>⚙️ دخول لوحة الإدارة (Admin)</span>
- <span>←</span>
- </a>
- </div>
- </div>
+                      <div className="mt-4 pt-3 border-t border-red-100/70 flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-[11px] text-zinc-500 font-semibold">هل أنت مسؤول أو مدير المتجر؟</span>
+                        <a 
+                          href="admin.html" 
+                          className="py-1.5 px-3 bg-zinc-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-colors shadow-2xs flex items-center gap-1.5"
+                        >
+                          <span>⚙️ دخول لوحة الإدارة (Admin)</span>
+                          <span>←</span>
+                        </a>
+                      </div>
+                    </div>
 
  {/* القسم 1: بطاقة (بياناتي المحفوظة للتنفيذ السريع) */}
                     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200 shadow-2xs">
