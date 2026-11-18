@@ -3,9 +3,11 @@ node_modules/
 .pnpm-store/
 dist/
 
-# Backups
+# Backups & Database scripts
 *.backup.html
 *.backup.*
+*.sql
+*.ps1
 
 # Temp search dumps & logs
 dom_dump.txt
