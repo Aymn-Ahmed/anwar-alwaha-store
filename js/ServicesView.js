@@ -1055,9 +1055,11 @@ function ServicesView(props) {
                                     {tiktokId ? (
                                       <div className="relative w-full aspect-[9/16] max-h-[460px] mx-auto rounded-2xl overflow-hidden border border-zinc-200 bg-black shadow-2xs">
                                         <iframe
-                                          src={`https://www.tiktok.com/embed/v2/${tiktokId}`}
+                                          src={`https://www.tiktok.com/player/v1/${tiktokId}?embed_from=oembed&music_info=1&description=1`}
                                           className="w-full h-full border-0"
-                                          allow="encrypted-media;"
+                                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
+                                          allowFullScreen
+                                          loading="lazy"
                                         />
                                       </div>
                                     ) : null}
@@ -1065,10 +1067,10 @@ function ServicesView(props) {
                                       href={mediaUrl}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="w-full py-2.5 px-3 bg-zinc-900 hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                                      className="w-full py-2.5 px-3 bg-[#fe2c55] hover:bg-[#e0264b] text-white text-xs font-black rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-[0.99]"
                                     >
-                                      <span>مشاهدة على تيك توك 🎵</span>
-                                      <span className="text-[10px]">↗</span>
+                                      <span>مشاهدة الفيديو على تطبيق تيك توك 🎵</span>
+                                      <span className="text-xs">↗</span>
                                     </a>
                                   </div>
                                 ) : null}
