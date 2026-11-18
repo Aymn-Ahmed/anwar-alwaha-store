@@ -353,6 +353,31 @@ function App() {
       const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
       const [toastMessage, setToastMessage] = useState(null);
 
+      // حالات وبيانات موقع العميل الجغرافي (GPS) للتوصيل
+      const [customerLocationLat, setCustomerLocationLat] = useState(null);
+      const [customerLocationLng, setCustomerLocationLng] = useState(null);
+      const [isLocatingGps, setIsLocatingGps] = useState(false);
+
+      const handleGetGpsLocation = () => {
+        if (!navigator.geolocation) {
+          showToast('تحديد الموقع عبر GPS غير مدعوم في متصفحك');
+          return;
+        }
+        setIsLocatingGps(true);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setCustomerLocationLat(pos.coords.latitude);
+            setCustomerLocationLng(pos.coords.longitude);
+            setIsLocatingGps(false);
+            showToast('تم تحديد موقعك بدقة بنجاح 📍');
+          },
+          (err) => {
+            setIsLocatingGps(false);
+            showToast('تعذر الحصول على الموقع، يرجى كتابة العنوان يدوياً');
+          }
+        );
+      };
+
       const productsSectionRef = useRef(null);
       const productDetailsRef = useRef(null);
 
@@ -1223,7 +1248,9 @@ function App() {
                 setSelectedQuantity={setSelectedQuantity}
                 handleIncreaseQuantity={handleIncreaseQuantity}
                 handleDecreaseQuantity={handleDecreaseQuantity}
+                addToCart={addToCart}
                 handleAddToCart={handleAddToCart}
+                handleAddToCartWithQty={handleAddToCartWithQty}
                 handleInstantOrder={handleInstantOrder}
                 isInstantOrdering={isInstantOrdering}
                 productReviewFilter={productReviewFilter}
@@ -1578,7 +1605,9 @@ function App() {
                     pricedSubtotal={pricedSubtotal}
                     unpricedCartItems={unpricedCartItems}
                     isSubmittingOrder={isSubmittingOrder}
-                    handleSubmitOrderToStore={handleSubmitOrderToStore}
+                    handleSubmitOrderDirectly={handleSubmitOrderDirectly}
+                    handleSendWhatsAppOrder={handleSendWhatsAppOrder}
+                    handleSubmitOrderToStore={handleSubmitOrderDirectly}
                     showToast={showToast}
                     setActiveNavTab={setActiveNavTab}
                     setSelectedProduct={setSelectedProduct}
@@ -1591,15 +1620,14 @@ function App() {
                   <ProfileOrders
                     userProfile={userProfile}
                     setUserProfile={setUserProfile}
-                    isEditingProfile={isEditingProfile}
-                    setIsEditingProfile={setIsEditingProfile}
-                    profileDraftName={profileDraftName}
-                    setProfileDraftName={setProfileDraftName}
-                    profileDraftPhone={profileDraftPhone}
-                    setProfileDraftPhone={setProfileDraftPhone}
-                    profileDraftAddress={profileDraftAddress}
-                    setProfileDraftAddress={setProfileDraftAddress}
-                    handleSaveProfile={handleSaveProfile}
+                    customerName={customerName}
+                    setCustomerName={setCustomerName}
+                    customerPhone={customerPhone}
+                    setCustomerPhone={setCustomerPhone}
+                    customerAddress={customerAddress}
+                    setCustomerAddress={setCustomerAddress}
+                    handleSaveUserProfile={handleSaveUserProfile}
+                    handleSaveProfile={handleSaveUserProfile}
                     customerOrders={customerOrders}
                     expandedOrderCodes={expandedOrderCodes}
                     setExpandedOrderCodes={setExpandedOrderCodes}
@@ -1608,8 +1636,9 @@ function App() {
                     reviewDrafts={reviewDrafts}
                     setReviewDrafts={setReviewDrafts}
                     isSubmittingReviews={isSubmittingReviews}
-                    handleOrderReviewFieldChange={handleOrderReviewFieldChange}
-                    handleReviewFileSelect={handleReviewFileSelect}
+                    handleReviewRatingChange={handleReviewRatingChange}
+                    handleReviewCommentChange={handleReviewCommentChange}
+                    handleReviewFilesSelected={handleReviewFilesSelected}
                     handleRemoveReviewFile={handleRemoveReviewFile}
                     handleSubmitOrderReviews={handleSubmitOrderReviews}
                     showToast={showToast}

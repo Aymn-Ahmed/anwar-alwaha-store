@@ -27,6 +27,8 @@ function CartDrawer(props) {
     unpricedCartItems = [],
     isSubmittingOrder = false,
     handleSubmitOrderToStore,
+    handleSubmitOrderDirectly = props.handleSubmitOrderDirectly || handleSubmitOrderToStore,
+    handleSendWhatsAppOrder = props.handleSendWhatsAppOrder,
     showToast,
     setActiveNavTab,
     setSelectedProduct,

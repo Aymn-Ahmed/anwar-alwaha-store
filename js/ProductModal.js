@@ -29,6 +29,8 @@ function ProductModal(props) {
     handleIncreaseQuantity,
     handleDecreaseQuantity,
     handleAddToCart,
+    addToCart = props.addToCart || handleAddToCart,
+    handleAddToCartWithQty = props.handleAddToCartWithQty || handleAddToCart,
     handleInstantOrder,
     isInstantOrdering,
     productReviewFilter,
