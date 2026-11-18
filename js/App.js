@@ -21,21 +21,52 @@ function App() {
   const getComplementaryProducts = window.getComplementaryProducts;
   const extractTikTokVideoId = window.extractTikTokVideoId;
 
+      // 1. التبويبات والتصفية
       const [activeNavTab, setActiveNavTab] = useState('shop');
       const [activeCategoryFilter, setActiveCategoryFilter] = useState('all');
 
-      // حالات تتبع الطلبات وقسم "طلباتي"
+      // 2. المنتج المختار وتفاصيل الصنف
+      const [selectedProduct, setSelectedProduct] = useState(null);
+      const [selectedQuantity, setSelectedQuantity] = useState(1);
+
+      // 3. حالات خوارزمية المنتجات المكملة (Complementary Products)
+      const [complementaryProducts, setComplementaryProducts] = useState([]);
+      const [loadingComplements, setLoadingComplements] = useState(false);
+
+      // 4. مزامنة البيانات السحابية من Supabase
+      const [remoteServices, setRemoteServices] = useState(null);
+      const [remoteProducts, setRemoteProducts] = useState(null);
+      const [isSupabaseLive, setIsSupabaseLive] = useState(false);
+
+      // 5. قسم الخدمات الرقمية والأكاديمية (Services Studios Hub)
+      const [activeServiceCategory, setActiveServiceCategory] = useState('all');
+      const [popoverServiceId, setPopoverServiceId] = useState(null);
+      const [selectedServiceChip, setSelectedServiceChip] = useState({});
+      const [selectedService, setSelectedService] = useState(null);
+      const [selectedServiceOption, setSelectedServiceOption] = useState(null);
+      const [modalPreviewCard, setModalPreviewCard] = useState(null);
+      const [serviceModalItem, setServiceModalItem] = useState(null);
+      const [cvPreviewMode, setCvPreviewMode] = useState('after');
+      const [selectedCvPkg, setSelectedCvPkg] = useState('pro');
+      const [gradDegree, setGradDegree] = useState('master');
+      const [webMockupMode, setWebMockupMode] = useState('portfolio');
+      const [proofPages, setProofPages] = useState(15);
+      const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+      const [showFloatingBadge, setShowFloatingBadge] = useState(true);
+
+      // 6. الباقة الحصرية المعتمدة للصنف المختار (Real Product Bundles)
+      const [activeBundle, setActiveBundle] = useState(null);
+      const [loadingBundle, setLoadingBundle] = useState(false);
+
+      // 7. تتبع الطلبات وقسم "طلباتي"
       const [customerOrders, setCustomerOrders] = useState([]);
       const [orderSearchCode, setOrderSearchCode] = useState('');
       const [orderSearchLoading, setOrderSearchLoading] = useState(false);
       const [expandedOrderCodes, setExpandedOrderCodes] = useState({});
+      const [confirmedOrderModal, setConfirmedOrderModal] = useState(null);
+      const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
-      // عدد الطلبات الجارية النشطة (التي لم تُسلّم بعد)
-      const activeOrdersCount = useMemo(() => {
-        return (customerOrders || []).filter(o => o.status !== 'delivered').length;
-      }, [customerOrders]);
-
-      // حالات تقييمات المنتجات بالوسائط المتعددة (SHEIN Style)
+      // 8. تقييمات المنتجات بالوسائط المتعددة (SHEIN Style)
       const [allApprovedReviews, setAllApprovedReviews] = useState([]);
       const [reviewModalOrder, setReviewModalOrder] = useState(null);
       const [reviewDrafts, setReviewDrafts] = useState({});
@@ -43,9 +74,14 @@ function App() {
       const [previewReviewMedia, setPreviewReviewMedia] = useState(null);
       const [productReviewFilter, setProductReviewFilter] = useState('all'); // 'all' | 'media'
 
-      // حالة تأكيد الطلب المباشر وفتح شاشة التأكيد
-      const [confirmedOrderModal, setConfirmedOrderModal] = useState(null);
-      const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+      // 9. البيانات النشطة: إما الحية من سوبابيز أو الاحتياطية المحلية
+      const activeServices = (remoteServices && remoteServices.length > 0) ? remoteServices : SERVICES_DATA;
+      const activeProducts = remoteProducts || PRODUCTS;
+
+      // 10. عدد الطلبات الجارية النشطة (التي لم تُسلّم بعد)
+      const activeOrdersCount = useMemo(() => {
+        return (customerOrders || []).filter(o => o.status !== 'delivered').length;
+      }, [customerOrders]);
 
       // قراءة طلبات العميل وتفعيل الاستماع اللحظي (Realtime) لتحديث المراحل فورياً
       useEffect(() => {
@@ -148,10 +184,6 @@ function App() {
         loadApprovedReviews();
       }, []);
 
-      // حالات مزامنة البيانات السحابية من Supabase
-      const [remoteServices, setRemoteServices] = useState(null);
-      const [remoteProducts, setRemoteProducts] = useState(null);
-      const [isSupabaseLive, setIsSupabaseLive] = useState(false);
 
       // قراءة البيانات من Supabase مع استخدام البيانات الحالية كـ Fallback تلقائي
       useEffect(() => {
@@ -206,59 +238,12 @@ function App() {
         }
       }, []);
 
-      // البيانات النشطة: إما الحية من سوبابيز أو الاحتياطية المحلية
-      const activeServices = (remoteServices && remoteServices.length > 0) ? remoteServices : SERVICES_DATA;
-      const activeProducts = remoteProducts || PRODUCTS;
-
-      // حالات خوارزمية المنتجات المكملة (Complementary Products)
-      const [complementaryProducts, setComplementaryProducts] = useState([]);
-      const [loadingComplements, setLoadingComplements] = useState(false);
-
-      // جلب المنتجات المكملة تلقائياً عند فتح تفاصيل أي منتج
-      useEffect(() => {
-        if (selectedProduct) {
-          let active = true;
-          setLoadingComplements(true);
-          getComplementaryProducts(selectedProduct, activeProducts).then(res => {
-            if (active) {
-              setComplementaryProducts(res || []);
-              setLoadingComplements(false);
-            }
-          });
-          return () => { active = false; };
-        } else {
-          setComplementaryProducts([]);
-        }
-      }, [selectedProduct?.id, activeProducts]);
-
-      // حالات قسم الخدمات الرقمية والأكاديمية (Services Studios Hub)
-      const [activeServiceCategory, setActiveServiceCategory] = useState('all');
-      const [popoverServiceId, setPopoverServiceId] = useState(null);
-      const [selectedServiceChip, setSelectedServiceChip] = useState({});
-      const [selectedService, setSelectedService] = useState(null);
-      const [selectedServiceOption, setSelectedServiceOption] = useState(null);
-      const [modalPreviewCard, setModalPreviewCard] = useState(null);
-
       const handleOpenService = (service) => {
         setSelectedService(service);
         setSelectedProduct(null);
         setSelectedServiceOption(service.options && service.options.length > 0 ? service.options[0] : null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       };
-      const [serviceModalItem, setServiceModalItem] = useState(null);
-      const [cvPreviewMode, setCvPreviewMode] = useState('after');
-      const [selectedCvPkg, setSelectedCvPkg] = useState('pro');
-      const [gradDegree, setGradDegree] = useState('master');
-      const [webMockupMode, setWebMockupMode] = useState('portfolio');
-      const [proofPages, setProofPages] = useState(15);
-      const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-      const [showFloatingBadge, setShowFloatingBadge] = useState(true);
-
-      // المنتج المختار لعرضه كصفحة كاملة
-      const [selectedProduct, setSelectedProduct] = useState(null);
-      // عداد الكمية لصفحة تفاصيل الصنف
-      const [selectedQuantity, setSelectedQuantity] = useState(1);
-
       // التمرير التلقائي الفوري لأعلى الصفحة وإعادة ضبط الكمية عند فتح أي صنف أو تغييره
       useEffect(() => {
         if (selectedProduct) {
@@ -910,9 +895,6 @@ function App() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       };
 
-      // الباقة الحصرية المعتمدة من لوحة التحكم للصنف الحالي (Real Product Bundles)
-      const [activeBundle, setActiveBundle] = useState(null);
-      const [loadingBundle, setLoadingBundle] = useState(false);
 
       // استعلام الباقة المفعّلة الحقيقية من Supabase للصنف المختار
       useEffect(() => {
