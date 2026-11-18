@@ -49,6 +49,24 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18",
+      "react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime"
+    }
+  }
+  </script>
+  <script>
+    // Ensure Babel Standalone uses classic runtime (React.createElement) with global React UMD
+    if (window.Babel && window.Babel.registerPreset) {
+      window.Babel.registerPreset('react', {
+        presets: [
+          [window.Babel.availablePresets['react'], { runtime: 'classic' }]
+        ]
+      });
+    }
+  </script>
 
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -136,13 +154,13 @@
   <div id="root"></div>
 
   <!-- Modular React Components (Loaded in strict dependency order) -->
-  <script type="text/babel" data-presets="react" src="js/constants.js"></script>
-  <script type="text/babel" data-presets="react" src="js/ProductCard.js"></script>
-  <script type="text/babel" data-presets="react" src="js/ProductModal.js"></script>
-  <script type="text/babel" data-presets="react" src="js/ServicesView.js"></script>
-  <script type="text/babel" data-presets="react" src="js/CartDrawer.js"></script>
-  <script type="text/babel" data-presets="react" src="js/ProfileOrders.js"></script>
-  <script type="text/babel" data-presets="react" src="js/App.js"></script>
+  <script type="text/babel" data-presets="react" data-type="module" src="js/constants.js"></script>
+  <script type="text/babel" data-presets="react" data-type="module" src="js/ProductCard.js"></script>
+  <script type="text/babel" data-presets="react" data-type="module" src="js/ProductModal.js"></script>
+  <script type="text/babel" data-presets="react" data-type="module" src="js/ServicesView.js"></script>
+  <script type="text/babel" data-presets="react" data-type="module" src="js/CartDrawer.js"></script>
+  <script type="text/babel" data-presets="react" data-type="module" src="js/ProfileOrders.js"></script>
+  <script type="text/babel" data-presets="react" data-type="module" src="js/App.js"></script>
 </body>
 
 </html>
