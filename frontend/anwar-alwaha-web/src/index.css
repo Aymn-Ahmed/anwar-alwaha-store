@@ -1,0 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    font-family: 'Cairo', sans-serif !important;
+  }
+
+  html {
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    direction: rtl;
+    font-family: 'Cairo', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f6f6f7;
+    color: #111111;
+    -webkit-tap-highlight-color: transparent;
+    margin: 0;
+    padding: 0;
+    overflow-x: clip;
+    min-height: 100vh;
+  }
+
+  h1, h2, .font-heading {
+    font-weight: 800 !important;
+    letter-spacing: -0.015em;
+  }
+
+  h3, h4, button {
+    font-weight: 700 !important;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.aspect-tall {
+  aspect-ratio: 3 / 4;
+}
+
+.logo-font {
+  font-family: 'Cairo', sans-serif !important;
+  letter-spacing: 0.12em;
+  font-weight: 900 !important;
+}
+
+/* ============================================================================
+   High-Contrast Daylight Mode (Light Mode) for Admin Dashboard
+   ============================================================================ */
+.admin-light-theme {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.admin-light-theme .bg-gray-950,
+.admin-light-theme .bg-gray-950\/70,
+.admin-light-theme .bg-gray-950\/80,
+.admin-light-theme .bg-gray-950\/60,
+.admin-light-theme .bg-gray-950\/40 {
+  background-color: #f1f5f9 !important;
+}
+
+.admin-light-theme .bg-gray-900,
+.admin-light-theme .bg-gray-900\/90 {
+  background-color: #ffffff !important;
+}
+
+.admin-light-theme .bg-gray-800,
+.admin-light-theme .bg-gray-800\/80,
+.admin-light-theme .bg-gray-800\/60 {
+  background-color: #f1f5f9 !important;
+}
+
+.admin-light-theme .hover\:bg-gray-800:hover,
+.admin-light-theme .hover\:bg-gray-800\/60:hover,
+.admin-light-theme .hover\:bg-gray-800\/40:hover,
+.admin-light-theme .hover\:bg-gray-700:hover {
+  background-color: #e2e8f0 !important;
+}
+
+.admin-light-theme .border-gray-800,
+.admin-light-theme .border-gray-800\/60,
+.admin-light-theme .border-gray-700,
+.admin-light-theme .border-gray-700\/60 {
+  border-color: #e2e8f0 !important;
+}
+
+.admin-light-theme .divide-gray-800\/60 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+.admin-light-theme .text-white:not(.bg-brand-600):not(.bg-brand-700):not(.bg-black):not(.bg-zinc-900):not(.bg-amber-600):not(.bg-red-600):not(.bg-sky-600):not(.bg-emerald-600):not(.keep-white),
+.admin-light-theme .text-gray-100,
+.admin-light-theme .text-gray-200 {
+  color: #0f172a !important;
+}
+
+.admin-light-theme .bg-brand-600,
+.admin-light-theme .bg-brand-600 *,
+.admin-light-theme .bg-black,
+.admin-light-theme .bg-black *,
+.admin-light-theme .bg-amber-600,
+.admin-light-theme .bg-amber-600 *,
+.admin-light-theme .bg-red-600,
+.admin-light-theme .bg-red-600 *,
+.admin-light-theme .keep-white,
+.admin-light-theme .keep-white * {
+  color: #ffffff !important;
+}
+
+.admin-light-theme .text-gray-300 {
+  color: #334155 !important;
+}
+
+.admin-light-theme .text-gray-400,
+.admin-light-theme .text-gray-500 {
+  color: #64748b !important;
+}
+
+.admin-light-theme .bg-emerald-950,
+.admin-light-theme .bg-emerald-950\/30 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+}
+.admin-light-theme .text-emerald-400,
+.admin-light-theme .text-emerald-300 {
+  color: #047857 !important;
+}
+
+.admin-light-theme .bg-sky-950\/70,
+.admin-light-theme .bg-sky-950\/30 {
+  background-color: #f0f9ff !important;
+  border-color: #bae6fd !important;
+}
+.admin-light-theme .text-sky-400,
+.admin-light-theme .text-sky-300 {
+  color: #0369a1 !important;
+}
+
+.admin-light-theme .bg-amber-950\/40,
+.admin-light-theme .bg-amber-950\/60,
+.admin-light-theme .bg-amber-950\/30 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+.admin-light-theme .text-amber-400,
+.admin-light-theme .text-amber-300,
+.admin-light-theme .text-amber-200 {
+  color: #b45309 !important;
+}
+
+.admin-light-theme .bg-red-950\/60,
+.admin-light-theme .bg-red-950\/30 {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+.admin-light-theme .text-red-400 {
+  color: #dc2626 !important;
+}
+
+.admin-light-theme .bg-brand-950,
+.admin-light-theme .bg-brand-950\/20 {
+  background-color: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+}
+.admin-light-theme .text-brand-400,
+.admin-light-theme .text-brand-300 {
+  color: #15803d !important;
+}

@@ -10,8 +10,8 @@
 // 6. احفظ هذا الملف، وسيتم ربط المتجر ولوحة التحكم (/admin) تلقائياً!
 // =============================================================================
 
-const SUPABASE_URL = "https://qcxzfoiprvgqtrvpihdr.supabase.co"; // رابط مشروع مكتبة أنوار الواحة
-const SUPABASE_ANON_KEY = "sb_publishable_HYGyuqwci_tsU5s9HV8cPw_QwxhywTX"; // المفتاح العام المعتمد
+const SUPABASE_URL = "https://rnaumaaquvmfkyfrqgad.supabase.co"; // رابط مشروع مكتبة أنوار الواحة الجديد anwar-alwaha-v2
+const SUPABASE_ANON_KEY = "sb_publishable_Wj4jFKYYWhExvEG_PLACEHOLDER"; // انسخ المفتاح العام Publishable Key من لوحة تحكم سوبابيز
 
 /**
  * دالة مساعدة للتحقق من تهيئة المفاتيح بشكل صحيح

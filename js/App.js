@@ -1128,8 +1128,8 @@ function App() {
                 onClick={() => { setSelectedProduct(null); setSelectedService(null); setActiveNavTab('shop'); }}
                 className="flex items-center gap-3 cursor-pointer group"
               >
-                <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-black text-lg shadow-sm group-hover:bg-[#fa2c19] transition-colors">
-                  أ
+                <div className="w-10 h-10 rounded-xl overflow-hidden border border-zinc-200 shadow-sm shrink-0 bg-black flex items-center justify-center">
+                  <img src="store-icon.jpg" alt="مكتبة أنوار الواحة" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <div className="font-logo font-black text-base text-black tracking-wider leading-none">ANWAR AL WAHAH</div>
@@ -1312,10 +1312,11 @@ function App() {
 
                                 <div
                                   onClick={() => setActiveNavTab('shop')}
-                                  className="logo-font text-xl sm:text-2xl font-black tracking-wider text-white cursor-pointer drop-shadow-sm flex items-center gap-2"
+                                  className="logo-font text-lg sm:text-2xl font-black tracking-wider text-white cursor-pointer drop-shadow-sm flex items-center gap-2"
                                 >
+                                  <img src="store-icon.jpg" alt="أنوار الواحة" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover border border-white/20 shadow-xs" />
                                   <span>ANWAR AL WAHAH</span>
-                                  <span className="text-yellow-300 text-xs font-sans font-bold tracking-normal border-r border-white/20 pr-2 mr-1">مكتبة أنوار الواحة</span>
+                                  <span className="text-yellow-300 text-xs font-sans font-bold tracking-normal border-r border-white/20 pr-2 mr-1 hidden xs:inline">مكتبة أنوار الواحة</span>
                                 </div>
 
                                 <div className="flex items-center gap-3">

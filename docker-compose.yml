@@ -1,0 +1,82 @@
+services:
+  # =============================================================================
+  # 1. Database Service: PostgreSQL 16
+  # =============================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: anwar-alwaha-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: anwar_alwaha_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d anwar_alwaha_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - anwar-network
+
+  # =============================================================================
+  # 2. Backend Service: ASP.NET Core 9 Web API
+  # =============================================================================
+  api:
+    build:
+      context: ./backend/AnwarAlwaha.API
+      dockerfile: Dockerfile
+    container_name: anwar-alwaha-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=anwar_alwaha_db;Username=postgres;Password=${DB_PASSWORD:-postgres}
+      JwtSettings__Secret: ${JWT_SECRET:-AnwarAlwaha_Super_Secure_Secret_Key_For_Jwt_Authentication_Must_Be_At_Least_64_Bytes_Long_2026_Enterprise!}
+      JwtSettings__Issuer: AnwarAlwaha.API
+      JwtSettings__Audience: AnwarAlwaha.Web
+      JwtSettings__ExpiryMinutes: 30
+      JwtSettings__RefreshTokenExpiryDays: 7
+      ADMIN_INITIAL_EMAIL: ${ADMIN_INITIAL_EMAIL:-admin@anwaralwaha.com}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-Admin@123456!}
+      MOYASAR_PUBLISHABLE_KEY: ${MOYASAR_PUBLISHABLE_KEY:-pk_test_sample_key_for_anwar_alwaha_library}
+      MOYASAR_SECRET_KEY: ${MOYASAR_SECRET_KEY:-sk_test_sample_secret_key_for_anwar_alwaha}
+      MOYASAR_WEBHOOK_SECRET: ${MOYASAR_WEBHOOK_SECRET:-whsec_sample_webhook_secret_signature_key}
+      MOYASAR_CALLBACK_URL: ${MOYASAR_CALLBACK_URL:-http://localhost/payment/callback}
+      CorsOrigins__0: http://localhost
+      CorsOrigins__1: http://localhost:5173
+      CorsOrigins__2: http://localhost:80
+      CorsOrigins__3: http://localhost:3000
+    ports:
+      - "5000:5000"
+    networks:
+      - anwar-network
+
+  # =============================================================================
+  # 3. Frontend Service: Nginx + React Single Page App
+  # =============================================================================
+  web:
+    build:
+      context: ./frontend/anwar-alwaha-web
+      dockerfile: Dockerfile
+    container_name: anwar-alwaha-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+    networks:
+      - anwar-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  anwar-network:
+    driver: bridge

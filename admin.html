@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>لوحة تحكم المتجر | مكتبة أنوار الواحة</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="favicon.png">
 
   <!-- استيراد خط Cairo من Google Fonts بأوزانه الكاملة (400, 500, 600, 700, 800, 900) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -527,6 +530,14 @@
         sort_order: 0
       });
       const [isSavingCategory, setIsSavingCategory] = useState(false);
+
+      // حالات نافذة إدارة ونقل المنتجات بين الأقسام (Category Products Transfer Modal)
+      const [transferModalCategory, setTransferModalCategory] = useState(null);
+      const [stagedMoveIn, setStagedMoveIn] = useState([]); // [productId, ...]
+      const [stagedMoveOut, setStagedMoveOut] = useState({}); // { [productId]: targetCategoryId }
+      const [isSavingTransfer, setIsSavingTransfer] = useState(false);
+      const [transferSearchQuery, setTransferSearchQuery] = useState('');
+      const [transferFilterCategory, setTransferFilterCategory] = useState('');
 
       // حالات إدارة الخدمات (services) المدارة من Supabase
       const [services, setServices] = useState([]);
@@ -1583,6 +1594,129 @@
       };
 
       // =========================================================================
+      // دوال نافذة إدارة ونقل المنتجات بين الأقسام (Category Transfer Modal)
+      // =========================================================================
+      const openCategoryTransferModal = (cat) => {
+        setTransferModalCategory(cat);
+        setStagedMoveIn([]);
+        setStagedMoveOut({});
+        setTransferSearchQuery('');
+        setTransferFilterCategory('');
+      };
+
+      const closeCategoryTransferModal = () => {
+        const hasChanges = stagedMoveIn.length > 0 || Object.keys(stagedMoveOut).length > 0;
+        if (hasChanges) {
+          const confirmed = window.confirm("لديك تعديلات معلقة لم يتم حفظها بعد. هل أنت متأكد من الإغلاق والتراجع عنها؟");
+          if (!confirmed) return;
+        }
+        setTransferModalCategory(null);
+        setStagedMoveIn([]);
+        setStagedMoveOut({});
+        setTransferSearchQuery('');
+        setTransferFilterCategory('');
+      };
+
+      const handleTransferMoveIn = (product) => {
+        if (stagedMoveOut[product.id]) {
+          setStagedMoveOut(prev => {
+            const next = { ...prev };
+            delete next[product.id];
+            return next;
+          });
+          return;
+        }
+        if (!stagedMoveIn.includes(product.id)) {
+          setStagedMoveIn(prev => [...prev, product.id]);
+        }
+      };
+
+      const handleTransferUndoMoveIn = (productId) => {
+        setStagedMoveIn(prev => prev.filter(id => id !== productId));
+      };
+
+      const handleTransferMoveOut = (productId, targetCatId) => {
+        if (!targetCatId) return;
+        if (stagedMoveIn.includes(productId)) {
+          setStagedMoveIn(prev => prev.filter(id => id !== productId));
+          const prod = products.find(p => p.id === productId);
+          if (prod && prod.category_id !== targetCatId) {
+            setStagedMoveOut(prev => ({ ...prev, [productId]: targetCatId }));
+          }
+          return;
+        }
+        setStagedMoveOut(prev => ({ ...prev, [productId]: targetCatId }));
+      };
+
+      const handleTransferUndoMoveOut = (productId) => {
+        setStagedMoveOut(prev => {
+          const next = { ...prev };
+          delete next[productId];
+          return next;
+        });
+      };
+
+      const handleSaveCategoryTransfer = async () => {
+        if (!transferModalCategory || !supabaseClient) return;
+        const hasChanges = stagedMoveIn.length > 0 || Object.keys(stagedMoveOut).length > 0;
+        if (!hasChanges) return;
+
+        setIsSavingTransfer(true);
+        try {
+          const operations = [];
+
+          if (stagedMoveIn.length > 0) {
+            operations.push(
+              supabaseClient
+                .from('products')
+                .update({ category_id: transferModalCategory.id })
+                .in('id', stagedMoveIn)
+            );
+          }
+
+          const moveOutGroups = {};
+          Object.entries(stagedMoveOut).forEach(([pId, targetCatId]) => {
+            if (!moveOutGroups[targetCatId]) moveOutGroups[targetCatId] = [];
+            moveOutGroups[targetCatId].push(pId);
+          });
+
+          Object.entries(moveOutGroups).forEach(([targetCatId, ids]) => {
+            operations.push(
+              supabaseClient
+                .from('products')
+                .update({ category_id: targetCatId })
+                .in('id', ids)
+            );
+          });
+
+          const results = await Promise.all(operations);
+          const failed = results.find(r => r.error);
+          if (failed && failed.error) throw failed.error;
+
+          setProducts(prev => prev.map(p => {
+            if (stagedMoveIn.includes(p.id)) {
+              return { ...p, category_id: transferModalCategory.id };
+            }
+            if (stagedMoveOut[p.id]) {
+              return { ...p, category_id: stagedMoveOut[p.id] };
+            }
+            return p;
+          }));
+
+          const totalMoved = stagedMoveIn.length + Object.keys(stagedMoveOut).length;
+          showToast(`تم بنجاح نقل وتحديث تصنيف ${totalMoved} منتج 🚀`, "success");
+          setTransferModalCategory(null);
+          setStagedMoveIn([]);
+          setStagedMoveOut({});
+        } catch (err) {
+          console.error("Failed to save category transfers:", err);
+          showToast(err.message || "فشل حفظ التغييرات، يرجى المحاولة مرة أخرى", "error");
+        } finally {
+          setIsSavingTransfer(false);
+        }
+      };
+
+      // =========================================================================
       // دوال إدارة مجموعات التكميل المتبادلة (Complement Groups)
       // =========================================================================
       const openAddGroupModal = () => {
@@ -2209,7 +2343,7 @@
           <div className="min-h-screen flex items-center justify-center p-4 bg-zinc-100">
             <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-zinc-200/80">
               <div className="text-center mb-6">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#c40d00] to-red-800 flex items-center justify-center text-white shadow-lg shadow-red-500/20"><IconShield className="w-7 h-7" /></div>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl overflow-hidden border-2 border-zinc-200 shadow-lg bg-black flex items-center justify-center"><img src="store-icon.jpg" alt="أنوار الواحة" className="w-full h-full object-cover" /></div>
                 <h1 className="text-xl sm:text-2xl font-black text-black">لوحة تحكم مسؤول المتجر</h1>
                 <p className="text-xs text-zinc-500 mt-1">مكتبة أنوار الواحة • إدارة الأصناف والأقسام</p>
               </div>
@@ -2331,8 +2465,8 @@
             {/* رأس القائمة الجانبية - هوية المتجر */}
             <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c40d00] to-red-800 flex items-center justify-center text-white shadow-md">
-                  <IconStore className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-700 shadow-md shrink-0 bg-black flex items-center justify-center">
+                  <img src="store-icon.jpg" alt="أنوار الواحة" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h2 className="text-sm font-extrabold text-white tracking-wide">أنوار الواحة</h2>
@@ -3561,17 +3695,23 @@
                     return (
                       <div
                         key={cat.id}
-                        className="bg-white rounded-2xl border border-zinc-200/80 p-3.5 flex items-center justify-between gap-3 shadow-2xs"
+                        onClick={() => openCategoryTransferModal(cat)}
+                        className="bg-white rounded-2xl border border-zinc-200/80 hover:border-zinc-300 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs transition-all cursor-pointer group"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-xl shrink-0">
+                          <span className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
                             {cat.icon || '📦'}
                           </span>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-bold text-zinc-900 truncate">{cat.title}</h3>
-                              <span className="text-[10px] font-bold bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full shrink-0">
-                                {count} أصناف
+                              <h3 className="text-sm font-bold text-zinc-900 truncate group-hover:text-[#c40d00] transition-colors">{cat.title}</h3>
+                              <span
+                                onClick={(e) => { e.stopPropagation(); openCategoryTransferModal(cat); }}
+                                className="text-[10px] font-black bg-zinc-100 group-hover:bg-[#c40d00] group-hover:text-white text-zinc-600 px-2.5 py-0.5 rounded-full shrink-0 transition-colors flex items-center gap-1 cursor-pointer"
+                                title="اضغط لفتح نافذة استعراض ونقل منتجات هذا القسم"
+                              >
+                                <span>{count} أصناف</span>
+                                <span className="text-[9px]">⇄</span>
                               </span>
                             </div>
                             {cat.description && (
@@ -3580,15 +3720,26 @@
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
                           <button
-                            onClick={() => openEditCategoryModal(cat)}
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openCategoryTransferModal(cat); }}
+                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                            title="إدارة ونقل منتجات هذا القسم"
+                          >
+                            <span>⇄</span>
+                            <span>نقل الأصناف</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openEditCategoryModal(cat); }}
                             className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-bold rounded-xl cursor-pointer"
                           >
                             تعديل
                           </button>
                           <button
-                            onClick={() => setDeleteConfirm({ type: 'category', id: cat.id, title: cat.title })}
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ type: 'category', id: cat.id, title: cat.title }); }}
                             className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-[#c40d00] text-xs font-bold rounded-xl cursor-pointer"
                           >
                             حذف
@@ -5228,6 +5379,364 @@
               </div>
             </div>
           )}
+
+          {/* ========================================================================= */}
+          {/* نافذة إدارة ونقل المنتجات المزدوجة بين الأقسام (Split View Transfer Modal) */}
+          {/* ========================================================================= */}
+          {transferModalCategory && (() => {
+            const currentCatId = transferModalCategory.id;
+            
+            // 1. حساب منتجات العمود الأيمن (القسم الحالي)
+            const originalInCurrent = products.filter(p => p.category_id === currentCatId && !stagedMoveOut[p.id]);
+            const stagedInProducts = products.filter(p => stagedMoveIn.includes(p.id));
+            const currentColumnProducts = [...stagedInProducts, ...originalInCurrent];
+
+            // 2. حساب منتجات العمود الأيسر (الأقسام الأخرى)
+            const movedOutProducts = products.filter(p => stagedMoveOut[p.id]);
+            const originalInOthers = products.filter(p => p.category_id !== currentCatId && !stagedMoveIn.includes(p.id));
+            let otherColumnProducts = [...movedOutProducts, ...originalInOthers];
+
+            // تطبيق فلتر القسم على العمود الأيسر
+            if (transferFilterCategory) {
+              otherColumnProducts = otherColumnProducts.filter(p => {
+                const effectiveCatId = stagedMoveOut[p.id] || p.category_id;
+                return effectiveCatId === transferFilterCategory;
+              });
+            }
+
+            // تطبيق البحث على العمود الأيسر
+            if (transferSearchQuery.trim()) {
+              const q = transferSearchQuery.trim().toLowerCase();
+              otherColumnProducts = otherColumnProducts.filter(p =>
+                (p.name && p.name.toLowerCase().includes(q))
+              );
+            }
+
+            const totalChanges = stagedMoveIn.length + Object.keys(stagedMoveOut).length;
+            const otherCategoriesList = categories.filter(c => c.id !== currentCatId);
+
+            return (
+              <div 
+                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-fade-in"
+                onClick={closeCategoryTransferModal}
+              >
+                <div 
+                  className="bg-white w-full max-w-5xl rounded-3xl max-h-[92vh] flex flex-col shadow-2xl border border-zinc-200 overflow-hidden animate-slide-up"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* رأس النافذة */}
+                  <div className="p-4 sm:p-5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/80 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <span className="w-11 h-11 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center text-2xl shadow-2xs">
+                        {transferModalCategory.icon || '📦'}
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base sm:text-lg font-black text-black">
+                            إدارة ونقل منتجات: {transferModalCategory.title}
+                          </h3>
+                          <span className="text-xs font-black bg-[#c40d00] text-white px-2.5 py-0.5 rounded-full">
+                            {currentColumnProducts.length} أصناف
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-500 mt-0.5">
+                          انقل المنتجات من وإلى هذا القسم بسلاسة وأمان مع مراجعة التغييرات قبل الحفظ
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeCategoryTransferModal}
+                      className="w-8 h-8 rounded-full bg-white hover:bg-zinc-200 border border-zinc-200 flex items-center justify-center text-sm font-bold text-zinc-600 transition-colors cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* جسم النافذة بنمط Split View المزدوج */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-zinc-200 flex-1 overflow-hidden min-h-0 bg-zinc-50/40">
+                    
+                    {/* العمود الأيمن: منتجات القسم المفتوح حالياً */}
+                    <div className="flex flex-col flex-1 min-h-0 bg-white">
+                      <div className="p-3.5 border-b border-zinc-100 bg-zinc-50/60 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-zinc-800">
+                            منتجات قسم ({transferModalCategory.title})
+                          </span>
+                          <span className="text-[11px] font-bold text-zinc-500 bg-white border border-zinc-200 px-2 py-0.5 rounded-lg">
+                            {currentColumnProducts.length} منتج
+                          </span>
+                        </div>
+                        {stagedMoveIn.length > 0 && (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md animate-pulse">
+                            +{stagedMoveIn.length} وارد جديد
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 max-h-[50vh] md:max-h-[58vh]">
+                        {currentColumnProducts.length === 0 ? (
+                          <div className="p-8 text-center border-2 border-dashed border-zinc-200 rounded-2xl">
+                            <span className="text-3xl block mb-2">📭</span>
+                            <p className="text-xs font-bold text-zinc-700">لا توجد منتجات في هذا القسم حالياً</p>
+                            <p className="text-[11px] text-zinc-400 mt-1">اختر منتجات من العمود الأيسر وانقلها إلى هنا بضغطة زر</p>
+                          </div>
+                        ) : (
+                          currentColumnProducts.map(prod => {
+                            const isStagedIn = stagedMoveIn.includes(prod.id);
+                            return (
+                              <div
+                                key={prod.id}
+                                className={`p-2.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                                  isStagedIn
+                                    ? 'bg-emerald-50/60 border-emerald-300 ring-1 ring-emerald-400/50 shadow-xs'
+                                    : 'bg-white border-zinc-200 hover:border-zinc-300 shadow-2xs'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <img
+                                    src={prod.image_url || 'store-icon.jpg'}
+                                    alt={prod.name}
+                                    className="w-11 h-11 rounded-xl object-cover border border-zinc-200 shrink-0 bg-zinc-100"
+                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'store-icon.jpg'; }}
+                                  />
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                      <h4 className="text-xs font-bold text-zinc-900 truncate">{prod.name}</h4>
+                                      {isStagedIn && (
+                                        <span className="text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.2 rounded shrink-0">
+                                          وارد جديد ✨
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="text-[11px] font-bold text-emerald-600 block mt-0.5">
+                                      {prod.price ? `${prod.price} ر.س` : 'بدون سعر'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="shrink-0 flex items-center gap-1.5">
+                                  {isStagedIn ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTransferUndoMoveIn(prod.id)}
+                                      className="py-1 px-2.5 bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 hover:text-red-600 text-[11px] font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                                      title="إلغاء النقل وإعادته لقسمه السابق"
+                                    >
+                                      <span>تراجع ↩</span>
+                                    </button>
+                                  ) : (
+                                    <select
+                                      value=""
+                                      onChange={(e) => handleTransferMoveOut(prod.id, e.target.value)}
+                                      className="text-[11px] font-bold py-1 px-2 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-700 focus:outline-none focus:border-[#c40d00] cursor-pointer"
+                                      title="نقل المنتج إلى قسم آخر صريح"
+                                    >
+                                      <option value="" disabled>نقل إلى قسم... ➔</option>
+                                      {otherCategoriesList.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                          {c.icon || '📦'} {c.title}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    {/* العمود الأيسر: منتجات الأقسام الأخرى مع البحث والفلتر */}
+                    <div className="flex flex-col flex-1 min-h-0 bg-zinc-50/50">
+                      {/* شريط البحث وتصفية الأقسام في العمود الأيسر */}
+                      <div className="p-3 border-b border-zinc-200/80 bg-white space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-zinc-800">
+                            منتجات الأقسام الأخرى
+                          </span>
+                          <span className="text-[11px] font-bold text-zinc-500">
+                            المتاح: {otherColumnProducts.length}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {/* شريط البحث الفوري */}
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={transferSearchQuery}
+                              onChange={(e) => setTransferSearchQuery(e.target.value)}
+                              placeholder="بحث باسم المنتج..."
+                              className="w-full pl-7 pr-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#c40d00]"
+                            />
+                            {transferSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setTransferSearchQuery('')}
+                                className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 text-xs font-bold"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+
+                          {/* قائمة فلتر القسم */}
+                          <select
+                            value={transferFilterCategory}
+                            onChange={(e) => setTransferFilterCategory(e.target.value)}
+                            className="w-full px-2.5 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#c40d00] cursor-pointer"
+                          >
+                            <option value="">جميع الأقسام الأخرى</option>
+                            {otherCategoriesList.map(c => {
+                              const countInC = products.filter(p => p.category_id === c.id && !stagedMoveIn.includes(p.id)).length;
+                              return (
+                                <option key={c.id} value={c.id}>
+                                  {c.icon || '📦'} {c.title} ({countInC})
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* قائمة المنتجات في العمود الأيسر */}
+                      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 max-h-[50vh] md:max-h-[58vh]">
+                        {otherColumnProducts.length === 0 ? (
+                          <div className="p-8 text-center border-2 border-dashed border-zinc-200 rounded-2xl bg-white">
+                            <span className="text-2xl block mb-1">🔍</span>
+                            <p className="text-xs font-bold text-zinc-600">لا توجد منتجات تطابق البحث أو الفلتر</p>
+                          </div>
+                        ) : (
+                          otherColumnProducts.map(prod => {
+                            const isStagedOut = Boolean(stagedMoveOut[prod.id]);
+                            const effectiveCatId = stagedMoveOut[prod.id] || prod.category_id;
+                            const catObj = categories.find(c => c.id === effectiveCatId);
+
+                            return (
+                              <div
+                                key={prod.id}
+                                className={`p-2.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                                  isStagedOut
+                                    ? 'bg-amber-50/70 border-amber-300 shadow-xs'
+                                    : 'bg-white border-zinc-200 hover:border-zinc-300 shadow-2xs'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <img
+                                    src={prod.image_url || 'store-icon.jpg'}
+                                    alt={prod.name}
+                                    className="w-11 h-11 rounded-xl object-cover border border-zinc-200 shrink-0 bg-zinc-100"
+                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'store-icon.jpg'; }}
+                                  />
+                                  <div className="min-w-0">
+                                    <h4 className="text-xs font-bold text-zinc-900 truncate">{prod.name}</h4>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className="text-[10px] font-bold bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md truncate max-w-[140px]">
+                                        {catObj ? `${catObj.icon || ''} ${catObj.title}` : 'بدون قسم'}
+                                      </span>
+                                      {isStagedOut && (
+                                        <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded">
+                                          صادر لقسم آخر
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="shrink-0 flex items-center gap-1.5">
+                                  {isStagedOut ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTransferUndoMoveOut(prod.id)}
+                                      className="py-1 px-2 bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 text-[11px] font-bold rounded-lg cursor-pointer flex items-center gap-1"
+                                      title="إلغاء النقل وإعادته لقسمه"
+                                    >
+                                      <span>تراجع ↩</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTransferMoveIn(prod)}
+                                      className="py-1.5 px-3 bg-zinc-900 hover:bg-[#c40d00] text-white text-xs font-bold rounded-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs"
+                                      title={`نقل هذا المنتج فوراً إلى قسم (${transferModalCategory.title})`}
+                                    >
+                                      <span>➔</span>
+                                      <span>نقل لقسمي</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* شريط التحكم السفلي (Footer) */}
+                  <div className="p-3.5 sm:p-4 border-t border-zinc-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                    <div className="flex items-center gap-2">
+                      {totalChanges > 0 ? (
+                        <div className="flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+                          <span>⚠️</span>
+                          <span>
+                            لديك <strong>{totalChanges}</strong> تعديل معلق ({stagedMoveIn.length} وارد، {Object.keys(stagedMoveOut).length} صادر)
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-zinc-400 font-semibold">
+                          لم يتم إجراء أي تعديل بعد
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={closeCategoryTransferModal}
+                        disabled={isSavingTransfer}
+                        className="flex-1 sm:flex-none py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                      >
+                        إلغاء / إغلاق
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSaveCategoryTransfer}
+                        disabled={totalChanges === 0 || isSavingTransfer}
+                        className={`flex-1 sm:flex-none py-2.5 px-5 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm ${
+                          totalChanges > 0 && !isSavingTransfer
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-98'
+                            : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {isSavingTransfer ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                            <span>جاري حفظ ونقل المنتجات...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>حفظ التغييرات</span>
+                            {totalChanges > 0 && (
+                              <span className="bg-black/20 text-white px-1.5 py-0.2 rounded-full text-[10px]">
+                                {totalChanges}
+                              </span>
+                            )}
+                            <span>✓</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ========================================================================= */}
           {groupModalOpen && (
