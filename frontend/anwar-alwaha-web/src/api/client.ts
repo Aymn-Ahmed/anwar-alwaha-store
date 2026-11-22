@@ -14,8 +14,20 @@ export const setAccessToken = (token: string | null) => {
 
 export const getAccessToken = () => currentAccessToken;
 
+// Determine API base URL dynamically from VITE_API_URL or VITE_API_BASE_URL with /api fallback
+const rawApiUrl = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  '/api'
+).trim();
+
+const normalizedBaseUrl =
+  rawApiUrl.startsWith('http://') || rawApiUrl.startsWith('https://')
+    ? (rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/+$/, '')}/api`)
+    : rawApiUrl;
+
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: normalizedBaseUrl,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

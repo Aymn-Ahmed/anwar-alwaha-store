@@ -26,8 +26,10 @@ COPY --from=build /app/publish .
 
 # Standard environment settings
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV ASPNETCORE_HTTP_PORTS=5000
 
+# Expose standard application ports (Render / Cloud / Docker)
 EXPOSE 5000
+EXPOSE 8080
+EXPOSE 10000
 
 ENTRYPOINT ["dotnet", "AnwarAlwaha.API.dll"]

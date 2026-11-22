@@ -15,6 +15,13 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Dynamic PORT resolution for Cloud PaaS (Render, Railway, Heroku)
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
 // 1. Database Connection (PostgreSQL via Npgsql)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -73,7 +80,21 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // 5. CORS Configuration
-var allowedOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>() ?? Array.Empty<string>();
+var corsOriginsConfig = builder.Configuration.GetSection("CorsOrigins").Get<string[]>() ?? Array.Empty<string>();
+var corsOriginsEnv = Environment.GetEnvironmentVariable("CORS_ORIGINS")?
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? Array.Empty<string>();
+var frontendUrlEnv = Environment.GetEnvironmentVariable("FRONTEND_URL")?.TrimEnd('/');
+
+var allowedOrigins = corsOriginsConfig
+    .Concat(corsOriginsEnv)
+    .Where(s => !string.IsNullOrWhiteSpace(s))
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+if (!string.IsNullOrWhiteSpace(frontendUrlEnv))
+{
+    allowedOrigins.Add(frontendUrlEnv);
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowStorefront", policy =>
@@ -81,13 +102,25 @@ builder.Services.AddCors(options =>
         policy.SetIsOriginAllowed(origin =>
               {
                   if (string.IsNullOrWhiteSpace(origin)) return false;
-                  if (Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
-                      (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                       uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)))
+                  if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
                   {
-                      return true;
+                      // Allow localhost / local loopback development
+                      if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                          uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                      {
+                          return true;
+                      }
+
+                      // Allow standard Cloud & PaaS frontend platforms (Render, Vercel, Netlify, GitHub Pages)
+                      if (uri.Host.EndsWith(".onrender.com", StringComparison.OrdinalIgnoreCase) ||
+                          uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase) ||
+                          uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase) ||
+                          uri.Host.EndsWith("github.io", StringComparison.OrdinalIgnoreCase))
+                      {
+                          return true;
+                      }
                   }
-                  return allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
+                  return allowedOrigins.Contains(origin);
               })
               .AllowAnyMethod()
               .AllowAnyHeader()
@@ -139,7 +172,9 @@ var app = builder.Build();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || 
+    builder.Configuration.GetValue<bool>("EnableSwagger", false) || 
+    string.Equals(Environment.GetEnvironmentVariable("ENABLE_SWAGGER"), "true", StringComparison.OrdinalIgnoreCase))
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -153,6 +188,15 @@ app.UseCors("AllowStorefront");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Health check endpoint for cloud monitoring & Render zero-downtime health probes
+app.MapGet("/healthz", () => Results.Ok(new 
+{ 
+    status = "healthy", 
+    service = "AnwarAlwaha.API", 
+    runtime = ".NET 9", 
+    timestamp = DateTime.UtcNow 
+}));
 
 app.MapControllers();
 
