@@ -46,6 +46,9 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMoyasarPaymentService, MoyasarPaymentService>();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 // 3. FluentValidation Setup
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestDtoValidator>();
@@ -218,8 +221,58 @@ using (var scope = app.Services.CreateScope())
                     "CREATE INDEX IF NOT EXISTS \"IX_products_Barcode\" ON products (\"Barcode\"); " +
                     "ALTER TABLE products ADD COLUMN IF NOT EXISTS \"ImageFetchAttempted\" boolean NOT NULL DEFAULT false; " +
                     "ALTER TABLE products ADD COLUMN IF NOT EXISTS search_keywords TEXT NULL; " +
-                    "ALTER TABLE categories ADD COLUMN IF NOT EXISTS \"ImageUrl\" text NULL;");
+                    "ALTER TABLE categories ADD COLUMN IF NOT EXISTS \"ImageUrl\" text NULL; " +
+                    "CREATE TABLE IF NOT EXISTS error_logs (" +
+                    "  \"Id\" uuid PRIMARY KEY, " +
+                    "  \"Message\" character varying(2000) NOT NULL, " +
+                    "  \"ExceptionType\" character varying(200) NOT NULL, " +
+                    "  \"StackTrace\" character varying(4000) NULL, " +
+                    "  \"Path\" character varying(500) NOT NULL, " +
+                    "  \"Method\" character varying(20) NOT NULL, " +
+                    "  \"QueryString\" character varying(1000) NULL, " +
+                    "  \"StatusCode\" integer NOT NULL DEFAULT 500, " +
+                    "  \"UserAgent\" character varying(500) NULL, " +
+                    "  \"ClientIp\" character varying(100) NULL, " +
+                    "  \"IsResolved\" boolean NOT NULL DEFAULT false, " +
+                    "  \"ResolvedAt\" timestamp with time zone NULL, " +
+                    "  \"ResolvedBy\" character varying(200) NULL, " +
+                    "  \"CreatedAt\" timestamp with time zone NOT NULL DEFAULT (now() at time zone 'utc')" +
+                    "); " +
+                    "CREATE INDEX IF NOT EXISTS \"IX_error_logs_CreatedAt\" ON error_logs (\"CreatedAt\"); " +
+                    "CREATE INDEX IF NOT EXISTS \"IX_error_logs_IsResolved\" ON error_logs (\"IsResolved\"); " +
+                    "CREATE TABLE IF NOT EXISTS coupons (" +
+                    "  \"Id\" uuid PRIMARY KEY, " +
+                    "  \"Code\" character varying(50) NOT NULL, " +
+                    "  \"DiscountType\" character varying(20) NOT NULL DEFAULT 'percentage', " +
+                    "  \"Value\" numeric(18,2) NOT NULL, " +
+                    "  \"MinOrderAmount\" numeric(18,2) NOT NULL DEFAULT 0, " +
+                    "  \"MaxDiscountAmount\" numeric(18,2) NULL, " +
+                    "  \"ExpiryDate\" timestamp with time zone NULL, " +
+                    "  \"UsageLimit\" integer NULL, " +
+                    "  \"TimesUsed\" integer NOT NULL DEFAULT 0, " +
+                    "  \"IsActive\" boolean NOT NULL DEFAULT true, " +
+                    "  \"Description\" character varying(500) NULL, " +
+                    "  \"CreatedAt\" timestamp with time zone NOT NULL DEFAULT (now() at time zone 'utc'), " +
+                    "  \"UpdatedAt\" timestamp with time zone NULL" +
+                    "); " +
+                    "CREATE UNIQUE INDEX IF NOT EXISTS \"IX_coupons_Code\" ON coupons (\"Code\"); " +
+                    "CREATE TABLE IF NOT EXISTS store_settings (" +
+                    "  \"Id\" character varying(50) PRIMARY KEY, " +
+                    "  \"ShowCouponField\" boolean NOT NULL DEFAULT false, " +
+                    "  \"UpdatedAt\" timestamp with time zone NOT NULL DEFAULT (now() at time zone 'utc')" +
+                    ");");
                 await context.Database.MigrateAsync();
+
+                if (!await context.StoreSettings.AnyAsync())
+                {
+                    await context.StoreSettings.AddAsync(new AnwarAlwaha.API.Entities.StoreSetting
+                    {
+                        Id = "general_settings",
+                        ShowCouponField = false,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                    await context.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {

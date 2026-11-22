@@ -23,6 +23,9 @@ public class UnitOfWork : IUnitOfWork
         Services = new GenericRepository<ServiceItem>(_context);
         Reviews = new GenericRepository<ProductReview>(_context);
         AdminUsers = new GenericRepository<AdminUser>(_context);
+        ErrorLogs = new GenericRepository<ErrorLog>(_context);
+        Coupons = new GenericRepository<Coupon>(_context);
+        StoreSettings = new GenericRepository<StoreSetting>(_context);
     }
 
     public IGenericRepository<Category> Categories { get; }
@@ -36,6 +39,9 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<ServiceItem> Services { get; }
     public IGenericRepository<ProductReview> Reviews { get; }
     public IGenericRepository<AdminUser> AdminUsers { get; }
+    public IGenericRepository<ErrorLog> ErrorLogs { get; }
+    public IGenericRepository<Coupon> Coupons { get; }
+    public IGenericRepository<StoreSetting> StoreSettings { get; }
 
     public async Task<int> CompleteAsync() => await _context.SaveChangesAsync();
 

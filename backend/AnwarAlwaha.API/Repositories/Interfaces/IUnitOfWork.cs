@@ -16,6 +16,9 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<ServiceItem> Services { get; }
     IGenericRepository<ProductReview> Reviews { get; }
     IGenericRepository<AdminUser> AdminUsers { get; }
+    IGenericRepository<ErrorLog> ErrorLogs { get; }
+    IGenericRepository<Coupon> Coupons { get; }
+    IGenericRepository<StoreSetting> StoreSettings { get; }
 
     Task<int> CompleteAsync();
     Task<IDbContextTransaction> BeginTransactionAsync();

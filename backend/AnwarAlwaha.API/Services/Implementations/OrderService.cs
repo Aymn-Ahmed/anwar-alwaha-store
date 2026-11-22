@@ -84,14 +84,13 @@ public class OrderService : IOrderService
                 });
             }
 
-            decimal discount = CalculateCouponDiscount(subtotal, dto.CouponCode);
+            decimal discount = await CalculateCouponDiscountAsync(subtotal, dto.CouponCode);
             order.SubtotalAmount = subtotal;
             order.DiscountAmount = discount;
             order.TotalAmount = Math.Max(0, subtotal - discount);
             order.Items = orderItems;
 
             await _unitOfWork.Orders.AddAsync(order);
-            await _unitOfWork.OrderItems.AddRangeAsync(orderItems);
 
             await _unitOfWork.CompleteAsync();
             await transaction.CommitAsync();
@@ -217,13 +216,47 @@ public class OrderService : IOrderService
         return MapToResponseDto(order);
     }
 
-    private static decimal CalculateCouponDiscount(decimal subtotal, string? couponCode)
+    private async Task<decimal> CalculateCouponDiscountAsync(decimal subtotal, string? couponCode)
     {
         if (subtotal <= 0 || string.IsNullOrWhiteSpace(couponCode))
             return 0;
 
         var code = couponCode.Trim().ToUpperInvariant();
-        decimal discount = code switch
+        var coupon = await _unitOfWork.Coupons.Query()
+            .FirstOrDefaultAsync(c => c.Code == code && c.IsActive);
+
+        if (coupon != null)
+        {
+            if (coupon.ExpiryDate.HasValue && coupon.ExpiryDate.Value < DateTime.UtcNow)
+                return 0;
+
+            if (coupon.UsageLimit.HasValue && coupon.TimesUsed >= coupon.UsageLimit.Value)
+                return 0;
+
+            if (subtotal < coupon.MinOrderAmount)
+                return 0;
+
+            decimal discount = 0;
+            if (coupon.DiscountType == "percentage")
+            {
+                discount = Math.Round(subtotal * (coupon.Value / 100m), 2);
+                if (coupon.MaxDiscountAmount.HasValue && discount > coupon.MaxDiscountAmount.Value)
+                {
+                    discount = coupon.MaxDiscountAmount.Value;
+                }
+            }
+            else
+            {
+                discount = Math.Min(coupon.Value, subtotal);
+            }
+
+            coupon.TimesUsed++;
+            _unitOfWork.Coupons.Update(coupon);
+            return Math.Min(discount, subtotal);
+        }
+
+        // Fallback promo codes
+        decimal fallbackDiscount = code switch
         {
             "WAHA10" or "WELCOME" or "WELCOME10" or "STUDENT" or "SCHOOL" => Math.Round(subtotal * 0.10m, 2),
             "ANWAR15" or "WAHA15" => Math.Round(subtotal * 0.15m, 2),
@@ -232,7 +265,7 @@ public class OrderService : IOrderService
             _ => 0m
         };
 
-        return Math.Min(discount, subtotal);
+        return Math.Min(fallbackDiscount, subtotal);
     }
 
     private static string GenerateOrderCode()

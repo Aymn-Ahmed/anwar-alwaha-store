@@ -23,6 +23,9 @@ public class AppDbContext : DbContext
     public DbSet<PaymentTransaction> Payments => Set<PaymentTransaction>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+    public DbSet<ErrorLog> ErrorLogs => Set<ErrorLog>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<StoreSetting> StoreSettings => Set<StoreSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

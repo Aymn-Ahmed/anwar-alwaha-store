@@ -22,9 +22,8 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
     {
         var order = await _orderService.CreateOrderAsync(dto);
-        return CreatedAtAction(
-            nameof(GetByCode),
-            new { orderCode = order.OrderCode },
+        return StatusCode(
+            StatusCodes.Status201Created,
             ApiResponse<OrderResponseDto>.Ok(order, "تم استلام طلبك بنجاح.")
         );
     }

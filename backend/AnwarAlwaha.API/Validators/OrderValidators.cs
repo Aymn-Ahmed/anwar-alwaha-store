@@ -1,3 +1,4 @@
+using AnwarAlwaha.API.Common;
 using AnwarAlwaha.API.DTOs.Orders;
 using FluentValidation;
 
@@ -13,7 +14,8 @@ public class CreateOrderDtoValidator : AbstractValidator<CreateOrderDto>
 
         RuleFor(x => x.CustomerPhone)
             .NotEmpty().WithMessage("رقم الجوال مطلوب.")
-            .Matches(@"^05\d{8}$").WithMessage("رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام (مثال: 0512345678).");
+            .Must(phone => !string.IsNullOrWhiteSpace(phone) && (SaudiPhoneNormalizer.NormalizeTo05(phone) != null || System.Text.RegularExpressions.Regex.IsMatch(phone.Trim(), @"^(05|\+9665|9665|009665)\d{8}$")))
+            .WithMessage("يرجى إدخال رقم جوال سعودي صحيح (مثال: 0512345678 أو 966512345678).");
 
         RuleFor(x => x.DeliveryMethod)
             .NotEmpty().WithMessage("طريقة الاستلام مطلوبة.")

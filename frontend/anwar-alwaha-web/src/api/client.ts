@@ -36,9 +36,14 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = currentAccessToken || localStorage.getItem('anwar_admin_token');
-  if (token && !config.headers.Authorization) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Only attach admin authentication token to admin routes
+  // This guarantees guest customers (orders, cart, checkout) never fail with 401
+  const isAdminRoute = Boolean(config.url && config.url.includes('/admin/'));
+  if (isAdminRoute) {
+    const token = currentAccessToken || localStorage.getItem('anwar_admin_token');
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -65,7 +70,11 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Only attempt token refresh for admin routes
+    const isAdminRoute = Boolean(originalRequest?.url && originalRequest.url.includes('/admin/'));
+
     if (
+      isAdminRoute &&
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/admin/auth/')

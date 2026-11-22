@@ -9,6 +9,8 @@ import {
   Gift,
   Zap,
   Link2,
+  Tag,
+  AlertTriangle,
   LogOut,
   ExternalLink,
   Store,
@@ -28,8 +30,10 @@ const NAV_ITEMS = [
   { to: '/admin/complements', label: 'التكميل والربط 🔗', icon: Link2 },
   { to: '/admin/services', label: 'إدارة الخدمات', icon: Zap },
   { to: '/admin/orders', label: 'إدارة الطلبات', icon: ShoppingBag },
+  { to: '/admin/coupons', label: 'إدارة الكوبونات 🏷️', icon: Tag },
   { to: '/admin/reviews', label: 'تقييمات العملاء', icon: Star },
   { to: '/admin/bundles', label: 'باقات التوفير', icon: Gift },
+  { to: '/admin/error-logs', label: 'سجل الأخطاء ⚠️', icon: AlertTriangle },
 ];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {

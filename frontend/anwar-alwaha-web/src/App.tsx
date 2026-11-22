@@ -29,6 +29,8 @@ import { AdminServicesPage } from './admin/pages/AdminServicesPage';
 import { AdminOrdersPage } from './admin/pages/AdminOrdersPage';
 import { AdminReviewsPage } from './admin/pages/AdminReviewsPage';
 import { AdminBundlesPage } from './admin/pages/AdminBundlesPage';
+import { AdminCouponsPage } from './admin/pages/AdminCouponsPage';
+import { AdminErrorLogsPage } from './admin/pages/AdminErrorLogsPage';
 
 export const App: React.FC = () => {
   const location = useLocation();
@@ -69,8 +71,10 @@ export const App: React.FC = () => {
               <Route path="complements" element={<AdminComplementsPage />} />
               <Route path="services" element={<AdminServicesPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
+              <Route path="coupons" element={<AdminCouponsPage />} />
               <Route path="reviews" element={<AdminReviewsPage />} />
               <Route path="bundles" element={<AdminBundlesPage />} />
+              <Route path="error-logs" element={<AdminErrorLogsPage />} />
             </Route>
           </Route>
 

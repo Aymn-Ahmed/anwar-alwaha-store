@@ -22,6 +22,7 @@ import { useCart, CartItem } from '../context/CartContext';
 import { useCustomer } from '../context/CustomerContext';
 import { useToast } from '../context/ToastContext';
 import { productsApi } from '../api/productsApi';
+import { couponsApi } from '../api/couponsApi';
 import { Product } from '../types/product.types';
 import { PriceTag } from '../components/common/PriceTag';
 import { ProductCard } from '../components/products/ProductCard';
@@ -60,8 +61,9 @@ export const CartPage: React.FC = () => {
     return map;
   });
 
-  // Coupon input
+  // Coupon input & visibility
   const [couponInput, setCouponInput] = useState(appliedCoupon?.code || '');
+  const [showCouponField, setShowCouponField] = useState(false);
 
   // Featured products for empty state (4 products)
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -80,6 +82,11 @@ export const CartPage: React.FC = () => {
             .catch(() => {});
         }
       })
+      .catch(() => {});
+
+    couponsApi
+      .getPublicSettings()
+      .then((visible) => setShowCouponField(visible))
       .catch(() => {});
   }, []);
 
@@ -450,70 +457,60 @@ export const CartPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Discount Code / Coupon Input */}
-            <div className="space-y-2 pt-2 border-t border-zinc-100">
-              <label className="block text-xs font-black text-zinc-700 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Tag size={13} className="text-[#c40d00]" />
-                  <span>كود الخصم / الكوبون</span>
-                </span>
-                {!appliedCoupon && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCouponInput('WAHA10');
-                      applyCoupon('WAHA10');
-                    }}
-                    className="text-[10px] font-bold text-emerald-700 hover:underline"
-                  >
-                    جرّب كود: WAHA10
-                  </button>
-                )}
-              </label>
+            {/* Discount Code / Coupon Input (Hidden unless enabled by admin) */}
+            {(showCouponField || appliedCoupon) && (
+              <div className="space-y-2 pt-2 border-t border-zinc-100">
+                <label className="block text-xs font-black text-zinc-700 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Tag size={13} className="text-[#c40d00]" />
+                    <span>كود الخصم / الكوبون</span>
+                  </span>
+                </label>
 
-              {appliedCoupon ? (
-                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                    <div>
-                      <div className="text-xs font-black text-emerald-950 font-mono">
-                        {appliedCoupon.code}
-                      </div>
-                      <div className="text-[10px] font-bold text-emerald-700">
-                        {appliedCoupon.label} (-{appliedCoupon.discountAmount.toFixed(2)} ر.س)
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                      <div>
+                        <div className="text-xs font-black text-emerald-950 font-mono">
+                          {appliedCoupon.code}
+                        </div>
+                        <div className="text-[10px] font-bold text-emerald-700">
+                          {appliedCoupon.label} (-{appliedCoupon.discountAmount.toFixed(2)} ر.س)
+                        </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        removeCoupon();
+                        setCouponInput('');
+                      }}
+                      className="text-emerald-700 hover:text-red-600 p-1 rounded-lg transition-colors"
+                      title="إزالة الكوبون"
+                    >
+                      <X size={15} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      removeCoupon();
-                      setCouponInput('');
-                    }}
-                    className="text-emerald-700 hover:text-red-600 p-1 rounded-lg transition-colors"
-                    title="إزالة الكوبون"
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleApplyCouponSubmit} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                    placeholder="أدخل كود الخصم (مثال: WAHA10)"
-                    className="flex-1 bg-zinc-50 focus:bg-white border border-zinc-200 focus:border-black rounded-xl px-3 py-2 text-xs font-mono uppercase text-zinc-900 placeholder:font-cairo placeholder:text-zinc-400 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-zinc-900 hover:bg-black text-white text-xs font-black px-4 py-2 rounded-xl transition-colors shrink-0"
-                  >
-                    تطبيق
-                  </button>
-                </form>
-              )}
-            </div>
+                ) : (
+                  <form onSubmit={handleApplyCouponSubmit} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      placeholder="أدخل كود الخصم"
+                      className="flex-1 bg-zinc-50 focus:bg-white border border-zinc-200 focus:border-black rounded-xl px-3 py-2 text-xs font-mono uppercase text-zinc-900 placeholder:font-cairo placeholder:text-zinc-400 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-zinc-900 hover:bg-black text-white text-xs font-black px-4 py-2 rounded-xl transition-colors shrink-0"
+                    >
+                      تطبيق
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
 
             {/* Financial Breakdown */}
             <div className="space-y-2.5 pt-3 border-t border-zinc-100 text-xs">
