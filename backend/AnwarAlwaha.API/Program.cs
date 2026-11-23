@@ -114,10 +114,13 @@ builder.Services.AddCors(options =>
                           return true;
                       }
 
-                      // Allow standard Cloud & PaaS frontend platforms (Render, Vercel, Netlify, GitHub Pages)
+                      // Allow standard Cloud & PaaS frontend platforms (Render, Vercel, Netlify, Cloudflare Pages, GitHub Pages)
                       if (uri.Host.EndsWith(".onrender.com", StringComparison.OrdinalIgnoreCase) ||
                           uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase) ||
                           uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase) ||
+                          uri.Host.EndsWith(".pages.dev", StringComparison.OrdinalIgnoreCase) ||
+                          uri.Host.Equals("anwar-alwaha-store.pages.dev", StringComparison.OrdinalIgnoreCase) ||
+                          uri.Host.EndsWith(".anwar-alwaha-store.pages.dev", StringComparison.OrdinalIgnoreCase) ||
                           uri.Host.EndsWith("github.io", StringComparison.OrdinalIgnoreCase))
                       {
                           return true;
