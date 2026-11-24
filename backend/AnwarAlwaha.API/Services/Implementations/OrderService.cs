@@ -173,6 +173,8 @@ public class OrderService : IOrderService
                 Status = o.Status,
                 TotalAmount = o.TotalAmount,
                 ItemsCount = o.Items.Count,
+                CustomerLocationLat = o.CustomerLocationLat,
+                CustomerLocationLng = o.CustomerLocationLng,
                 CreatedAt = o.CreatedAt
             })
             .ToListAsync();
@@ -305,6 +307,8 @@ public class OrderService : IOrderService
             TotalAmount = order.TotalAmount,
             CustomerNotes = order.CustomerNotes,
             AdminNotes = order.AdminNotes,
+            CustomerLocationLat = order.CustomerLocationLat,
+            CustomerLocationLng = order.CustomerLocationLng,
             IsReviewed = order.IsReviewed,
             CreatedAt = order.CreatedAt,
             Items = order.Items.Select(i => new OrderItemResponseDto

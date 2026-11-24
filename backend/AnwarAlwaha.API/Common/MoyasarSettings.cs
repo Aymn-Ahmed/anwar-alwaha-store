@@ -31,6 +31,19 @@ public class MoyasarSettings
         if (!string.IsNullOrWhiteSpace(envCallbackUrl))
             settings.CallbackUrl = envCallbackUrl;
 
+        // Keyless Safe Mode defaults to prevent crashes when environment variables are omitted
+        if (string.IsNullOrWhiteSpace(settings.PublishableKey))
+            settings.PublishableKey = "pk_test_sample_key_for_anwar_alwaha_library";
+
+        if (string.IsNullOrWhiteSpace(settings.SecretKey))
+            settings.SecretKey = "sk_test_sample_secret_key_for_anwar_alwaha";
+
+        if (string.IsNullOrWhiteSpace(settings.WebhookSecret))
+            settings.WebhookSecret = "whsec_sample_webhook_secret_signature_key";
+
+        if (string.IsNullOrWhiteSpace(settings.CallbackUrl))
+            settings.CallbackUrl = "https://anwar-alwaha-store.pages.dev/payment/callback";
+
         return settings;
     }
 }

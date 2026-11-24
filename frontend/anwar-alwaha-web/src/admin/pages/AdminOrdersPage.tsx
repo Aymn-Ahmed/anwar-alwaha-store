@@ -13,6 +13,7 @@ import {
   RefreshCw,
   X,
   FileText,
+  MapPin,
 } from 'lucide-react';
 import { adminApi } from '../../api/adminApi';
 import { OrderAdminSummary } from '../../types/admin.types';
@@ -196,7 +197,20 @@ export const AdminOrdersPage: React.FC = () => {
                       {ord.deliveryMethod === 'branch' ? (
                         <span className="flex items-center gap-1"><Store size={13} /> استلام الفرع</span>
                       ) : (
-                        <span className="flex items-center gap-1 text-sky-400"><Truck size={13} /> توصيل</span>
+                        <span className="inline-flex items-center gap-1.5 text-sky-400">
+                          <Truck size={13} /> توصيل
+                          {(ord.googleMapsUrl || (ord.customerLocationLat && ord.customerLocationLng)) && (
+                            <a
+                              href={ord.googleMapsUrl || `https://www.google.com/maps?q=${ord.customerLocationLat},${ord.customerLocationLng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="فتح موقع العميل على خرائط Google"
+                              className="text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 p-1 rounded-md border border-emerald-800"
+                            >
+                              <MapPin size={12} />
+                            </a>
+                          )}
+                        </span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-gray-300 font-bold">{ord.itemsCount} صنف</td>
@@ -285,6 +299,20 @@ export const AdminOrdersPage: React.FC = () => {
                     <span className="text-gray-500 block mb-0.5">العنوان:</span>
                     <span className="font-bold text-gray-200">{selectedOrderDetail.customerAddress || '-'}</span>
                   </div>
+                  {(selectedOrderDetail.googleMapsUrl || (selectedOrderDetail.customerLocationLat && selectedOrderDetail.customerLocationLng)) && (
+                    <div className="col-span-2 pt-2 border-t border-gray-800 flex items-center justify-between">
+                      <span className="text-gray-400 text-[11px]">موقع العميل محدد عبر GPS (الخريطة):</span>
+                      <a
+                        href={selectedOrderDetail.googleMapsUrl || `https://www.google.com/maps?q=${selectedOrderDetail.customerLocationLat},${selectedOrderDetail.customerLocationLng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs hover:bg-emerald-600/30 transition-all"
+                      >
+                        <MapPin size={13} />
+                        <span>فتح الموقع في Google Maps 🗺️</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* Items Snapshot */}

@@ -225,6 +225,18 @@ using (var scope = app.Services.CreateScope())
                     "ALTER TABLE products ADD COLUMN IF NOT EXISTS \"ImageFetchAttempted\" boolean NOT NULL DEFAULT false; " +
                     "ALTER TABLE products ADD COLUMN IF NOT EXISTS search_keywords TEXT NULL; " +
                     "ALTER TABLE categories ADD COLUMN IF NOT EXISTS \"ImageUrl\" text NULL; " +
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"CustomerLocationLat\" double precision NULL; " +
+                    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"CustomerLocationLng\" double precision NULL; " +
+                    "ALTER TABLE product_reviews ADD COLUMN IF NOT EXISTS \"MediaUrls\" text[] NOT NULL DEFAULT '{}'; " +
+                    "CREATE TABLE IF NOT EXISTS category_complement_rules (" +
+                    "  \"Id\" uuid PRIMARY KEY, " +
+                    "  \"SourceCategoryId\" character varying(80) NOT NULL REFERENCES categories(\"Id\") ON DELETE CASCADE, " +
+                    "  \"TargetCategoryId\" character varying(80) NOT NULL REFERENCES categories(\"Id\") ON DELETE CASCADE, " +
+                    "  \"IsActive\" boolean NOT NULL DEFAULT true, " +
+                    "  \"CreatedAt\" timestamp with time zone NOT NULL DEFAULT (now() at time zone 'utc'), " +
+                    "  \"UpdatedAt\" timestamp with time zone NULL" +
+                    "); " +
+                    "CREATE UNIQUE INDEX IF NOT EXISTS \"IX_category_complement_rules_Source_Target\" ON category_complement_rules (\"SourceCategoryId\", \"TargetCategoryId\"); " +
                     "CREATE TABLE IF NOT EXISTS error_logs (" +
                     "  \"Id\" uuid PRIMARY KEY, " +
                     "  \"Message\" character varying(2000) NOT NULL, " +

@@ -26,6 +26,9 @@ export interface OrderAdminSummary {
   status: string;
   totalAmount: number;
   itemsCount: number;
+  customerLocationLat?: number;
+  customerLocationLng?: number;
+  googleMapsUrl?: string;
   createdAt: string;
 }
 

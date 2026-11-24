@@ -24,7 +24,19 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "Unhandled server error captured by GlobalExceptionHandler: {Message}", exception.Message);
+        // Unpack inner exceptions chain for crystal-clear debugging
+        var innerMessages = new List<string>();
+        var curr = exception.InnerException;
+        while (curr != null)
+        {
+            if (!string.IsNullOrWhiteSpace(curr.Message))
+                innerMessages.Add(curr.Message);
+            curr = curr.InnerException;
+        }
+        var innerChain = innerMessages.Count > 0 ? string.Join(" ---> ", innerMessages) : null;
+
+        _logger.LogError(exception, "Unhandled server error captured by GlobalExceptionHandler: {Message} | InnerDetails: {Inner}", 
+            exception.Message, innerChain ?? "None");
 
         // Only log 500 server-side exceptions (skip 4xx client errors)
         bool isClientError = exception is KeyNotFoundException or
@@ -42,7 +54,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         if (!isClientError)
         {
-            await LogServerErrorToDatabaseAsync(httpContext, exception, cancellationToken);
+            await LogServerErrorToDatabaseAsync(httpContext, exception, innerChain, cancellationToken);
         }
 
         httpContext.Response.StatusCode = statusCode;
@@ -52,9 +64,15 @@ public class GlobalExceptionHandler : IExceptionHandler
             ? exception.Message 
             : "حدث خطأ داخلي في الخادم، يرجى المحاولة لاحقاً.";
 
+        var errorDetails = new List<string> { exception.Message };
+        if (innerChain != null)
+        {
+            errorDetails.AddRange(innerMessages);
+        }
+
         var response = ApiResponse<string>.Fail(
             responseMessage,
-            !isClientError ? new List<string> { exception.Message } : null
+            !isClientError ? errorDetails : null
         );
 
         var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
@@ -66,7 +84,11 @@ public class GlobalExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private async Task LogServerErrorToDatabaseAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    private async Task LogServerErrorToDatabaseAsync(
+        HttpContext httpContext, 
+        Exception exception, 
+        string? innerChain,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -84,11 +106,19 @@ public class GlobalExceptionHandler : IExceptionHandler
             var path = httpContext.Request.Path.Value ?? string.Empty;
             if (path.Length > 500) path = path.Substring(0, 500);
 
+            // Compose detailed message including inner exception root cause
+            string fullMessage = exception.Message;
+            if (!string.IsNullOrWhiteSpace(innerChain))
+            {
+                fullMessage = $"{exception.Message} ---> [Inner]: {innerChain}";
+            }
+            if (fullMessage.Length > 2000) fullMessage = fullMessage.Substring(0, 2000);
+
             var errorLog = new ErrorLog
             {
                 Id = Guid.NewGuid(),
-                Message = exception.Message.Length > 2000 ? exception.Message.Substring(0, 2000) : exception.Message,
-                ExceptionType = exception.GetType().Name,
+                Message = fullMessage,
+                ExceptionType = exception.InnerException?.GetType().Name ?? exception.GetType().Name,
                 StackTrace = stackTrace,
                 Path = path,
                 Method = httpContext.Request.Method,

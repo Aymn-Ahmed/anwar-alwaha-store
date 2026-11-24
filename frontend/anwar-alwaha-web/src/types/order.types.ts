@@ -41,6 +41,9 @@ export interface OrderResponse {
   customerNotes?: string;
   adminNotes?: string;
   isReviewed: boolean;
+  customerLocationLat?: number;
+  customerLocationLng?: number;
+  googleMapsUrl?: string;
   createdAt: string;
   items: OrderItemResponse[];
 }

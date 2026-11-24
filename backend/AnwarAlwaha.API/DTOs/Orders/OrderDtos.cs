@@ -47,6 +47,11 @@ public class OrderResponseDto
     public string? CustomerNotes { get; set; }
     public string? AdminNotes { get; set; }
     public bool IsReviewed { get; set; }
+    public double? CustomerLocationLat { get; set; }
+    public double? CustomerLocationLng { get; set; }
+    public string? GoogleMapsUrl => CustomerLocationLat.HasValue && CustomerLocationLng.HasValue
+        ? $"https://www.google.com/maps?q={CustomerLocationLat.Value},{CustomerLocationLng.Value}"
+        : null;
     public DateTime CreatedAt { get; set; }
     public List<OrderItemResponseDto> Items { get; set; } = new();
 }
@@ -67,5 +72,10 @@ public class OrderAdminListDto
     public string Status { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public int ItemsCount { get; set; }
+    public double? CustomerLocationLat { get; set; }
+    public double? CustomerLocationLng { get; set; }
+    public string? GoogleMapsUrl => CustomerLocationLat.HasValue && CustomerLocationLng.HasValue
+        ? $"https://www.google.com/maps?q={CustomerLocationLat.Value},{CustomerLocationLng.Value}"
+        : null;
     public DateTime CreatedAt { get; set; }
 }
