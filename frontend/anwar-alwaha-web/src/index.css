@@ -128,12 +128,20 @@
 .admin-light-theme .bg-brand-600 *,
 .admin-light-theme .bg-black,
 .admin-light-theme .bg-black *,
+.admin-light-theme .bg-zinc-950,
+.admin-light-theme .bg-zinc-950 *,
+.admin-light-theme .btn-dark-export,
+.admin-light-theme .btn-dark-export *,
 .admin-light-theme .bg-amber-600,
 .admin-light-theme .bg-amber-600 *,
 .admin-light-theme .bg-red-600,
 .admin-light-theme .bg-red-600 *,
 .admin-light-theme .keep-white,
-.admin-light-theme .keep-white * {
+.admin-light-theme .keep-white *,
+.admin-light-theme #store-qr-printable-poster.theme-emerald,
+.admin-light-theme #store-qr-printable-poster.theme-emerald *,
+.admin-light-theme #store-qr-printable-poster.theme-dark,
+.admin-light-theme #store-qr-printable-poster.theme-dark * {
   color: #ffffff !important;
 }
 

@@ -560,11 +560,15 @@ export const StoreQrPosterModal: React.FC<StoreQrPosterModalProps> = ({
                   id="store-qr-printable-poster"
                   className={`w-full max-w-[360px] p-6 rounded-3xl border-2 text-center transition-all shadow-xl relative ${
                     theme === 'light'
-                      ? 'bg-white border-amber-500/80 text-gray-900 shadow-amber-900/5'
+                      ? 'theme-light bg-white border-amber-500/80 text-gray-900 shadow-amber-900/5'
                       : theme === 'emerald'
-                      ? 'bg-gradient-to-b from-emerald-900 via-emerald-950 to-[#022c22] border-amber-400 text-white shadow-emerald-950/40'
-                      : 'bg-slate-900 border-slate-700 text-white shadow-slate-950/40'
+                      ? 'theme-emerald bg-gradient-to-b from-emerald-900 via-emerald-950 to-[#022c22] border-amber-400 text-white keep-white shadow-emerald-950/40'
+                      : 'theme-dark bg-slate-900 border-slate-700 text-white keep-white shadow-slate-950/40'
                   }`}
+                  style={{
+                    backgroundColor: theme === 'light' ? '#ffffff' : theme === 'emerald' ? '#064e3b' : '#0f172a',
+                    color: theme === 'light' ? '#111827' : '#ffffff',
+                  }}
                 >
                   {/* Subtle inner hairline accent */}
                   <div
@@ -591,22 +595,16 @@ export const StoreQrPosterModal: React.FC<StoreQrPosterModalProps> = ({
                       📚
                     </div>
                     <h2
-                      className={`text-lg font-black tracking-tight ${
-                        theme === 'light'
-                          ? 'text-gray-950'
-                          : 'text-white'
-                      }`}
+                      className="text-lg font-black tracking-tight"
+                      style={{ color: theme === 'light' ? '#111827' : '#ffffff' }}
                     >
                       مكتبة ومتجر أنوار الواحة
                     </h2>
                     <p
-                      className={`text-[10px] font-bold ${
-                        theme === 'light'
-                          ? 'text-amber-700'
-                          : theme === 'emerald'
-                          ? 'text-amber-300'
-                          : 'text-slate-300'
-                      }`}
+                      className="text-[10px] font-bold"
+                      style={{
+                        color: theme === 'light' ? '#b45309' : theme === 'emerald' ? '#fde68a' : '#e2e8f0',
+                      }}
                     >
                       خميس مشيط • قرطاسية • طباعة • توصيل
                     </p>
@@ -615,25 +613,19 @@ export const StoreQrPosterModal: React.FC<StoreQrPosterModalProps> = ({
                   {/* Headline */}
                   <div className="space-y-1 mb-3 relative z-10">
                     <h3
-                      className={`text-sm sm:text-base font-black ${
-                        theme === 'light'
-                          ? 'text-gray-900'
-                          : theme === 'emerald'
-                          ? 'text-amber-300'
-                          : 'text-white'
-                      }`}
+                      className="text-sm sm:text-base font-black"
+                      style={{
+                        color: theme === 'light' ? '#111827' : theme === 'emerald' ? '#fde68a' : '#ffffff',
+                      }}
                     >
                       {titleText}
                     </h3>
                     {layout === 'poster' && (
                       <p
-                        className={`text-[10px] leading-relaxed ${
-                          theme === 'light'
-                            ? 'text-gray-500 font-medium'
-                            : theme === 'emerald'
-                            ? 'text-emerald-100 font-normal'
-                            : 'text-slate-300 font-normal'
-                        }`}
+                        className="text-[10px] leading-relaxed font-medium"
+                        style={{
+                          color: theme === 'light' ? '#4b5563' : theme === 'emerald' ? '#e2e8f0' : '#cbd5e1',
+                        }}
                       >
                         {subtitleText}
                       </p>
@@ -653,13 +645,12 @@ export const StoreQrPosterModal: React.FC<StoreQrPosterModalProps> = ({
                   {/* Store Link Pill */}
                   <div className="my-2 relative z-10">
                     <span
-                      className={`inline-block font-mono text-[10px] font-bold px-3 py-1 rounded-xl border ${
-                        theme === 'light'
-                          ? 'bg-gray-50 text-gray-900 border-gray-200'
-                          : theme === 'emerald'
-                          ? 'bg-black/40 text-amber-200 border-amber-400/30'
-                          : 'bg-white/10 text-white border-white/20'
-                      }`}
+                      className="inline-block font-mono text-[10px] font-bold px-3 py-1 rounded-xl border"
+                      style={{
+                        backgroundColor: theme === 'light' ? '#f9fafb' : 'rgba(0, 0, 0, 0.45)',
+                        color: theme === 'light' ? '#111827' : theme === 'emerald' ? '#fde68a' : '#ffffff',
+                        borderColor: theme === 'light' ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)',
+                      }}
                       dir="ltr"
                     >
                       {targetUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
@@ -670,29 +661,32 @@ export const StoreQrPosterModal: React.FC<StoreQrPosterModalProps> = ({
                   {layout === 'poster' && (
                     <div className="grid grid-cols-3 gap-1.5 my-2.5 text-[9px] font-bold relative z-10">
                       <div
-                        className={`p-1.5 rounded-xl border ${
-                          theme === 'light'
-                            ? 'bg-gray-50 border-gray-200 text-gray-900'
-                            : 'bg-white/10 border-white/15 text-white'
-                        }`}
+                        className="p-1.5 rounded-xl border font-bold"
+                        style={{
+                          backgroundColor: theme === 'light' ? '#f9fafb' : 'rgba(255, 255, 255, 0.12)',
+                          color: theme === 'light' ? '#111827' : '#ffffff',
+                          borderColor: theme === 'light' ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)',
+                        }}
                       >
                         ⚡ توصيل سريع
                       </div>
                       <div
-                        className={`p-1.5 rounded-xl border ${
-                          theme === 'light'
-                            ? 'bg-gray-50 border-gray-200 text-gray-900'
-                            : 'bg-white/10 border-white/15 text-white'
-                        }`}
+                        className="p-1.5 rounded-xl border font-bold"
+                        style={{
+                          backgroundColor: theme === 'light' ? '#f9fafb' : 'rgba(255, 255, 255, 0.12)',
+                          color: theme === 'light' ? '#111827' : '#ffffff',
+                          borderColor: theme === 'light' ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)',
+                        }}
                       >
                         💳 دفع إلكتروني
                       </div>
                       <div
-                        className={`p-1.5 rounded-xl border ${
-                          theme === 'light'
-                            ? 'bg-gray-50 border-gray-200 text-gray-900'
-                            : 'bg-white/10 border-white/15 text-white'
-                        }`}
+                        className="p-1.5 rounded-xl border font-bold"
+                        style={{
+                          backgroundColor: theme === 'light' ? '#f9fafb' : 'rgba(255, 255, 255, 0.12)',
+                          color: theme === 'light' ? '#111827' : '#ffffff',
+                          borderColor: theme === 'light' ? '#e5e7eb' : 'rgba(255, 255, 255, 0.2)',
+                        }}
                       >
                         🖨️ طباعة فورية
                       </div>
@@ -702,13 +696,10 @@ export const StoreQrPosterModal: React.FC<StoreQrPosterModalProps> = ({
                   {/* Footer note */}
                   <div className="mt-2.5 pt-2 border-t border-gray-200/60 text-[9px] font-medium relative z-10">
                     <p
-                      className={
-                        theme === 'light'
-                          ? 'text-gray-500'
-                          : theme === 'emerald'
-                          ? 'text-emerald-200'
-                          : 'text-slate-400'
-                      }
+                      className="text-[9px] font-medium"
+                      style={{
+                        color: theme === 'light' ? '#6b7280' : theme === 'emerald' ? '#a7f3d0' : '#cbd5e1',
+                      }}
                     >
                       افتح كاميرا جوالك وامسح الرمز لطلب خدماتنا مباشرة
                     </p>
@@ -723,10 +714,13 @@ export const StoreQrPosterModal: React.FC<StoreQrPosterModalProps> = ({
                   type="button"
                   onClick={handleDownloadPoster}
                   disabled={isExporting}
-                  className="flex-1 px-4 py-3 rounded-2xl bg-zinc-950 hover:bg-black text-white font-black text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+                  style={{ backgroundColor: '#09090b', color: '#ffffff' }}
+                  className="btn-dark-export flex-1 px-4 py-3 rounded-2xl bg-zinc-950 hover:bg-black text-white keep-white font-black text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <Download size={15} />
-                  <span>{isExporting ? 'جاري التصدير...' : 'تحميل البوستر كصورة (PNG)'}</span>
+                  <Download size={15} style={{ color: '#ffffff' }} />
+                  <span className="keep-white" style={{ color: '#ffffff' }}>
+                    {isExporting ? 'جاري التصدير...' : 'تحميل البوستر كصورة (PNG)'}
+                  </span>
                 </button>
 
                 {/* 2. Direct Print */}
