@@ -204,3 +204,24 @@
 .admin-light-theme .text-brand-300 {
   color: #15803d !important;
 }
+
+/* Announcement Marquee Ticker */
+@keyframes marquee-ticker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(50%, 0, 0);
+  }
+}
+
+.animate-marquee-ticker {
+  display: flex;
+  width: max-content;
+  animation: marquee-ticker 25s linear infinite;
+}
+
+.animate-marquee-ticker:hover {
+  animation-play-state: paused;
+}
+

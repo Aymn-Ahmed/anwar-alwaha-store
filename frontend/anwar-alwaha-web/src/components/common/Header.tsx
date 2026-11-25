@@ -177,7 +177,7 @@ export const Header: React.FC = () => {
                   if (e.key === 'Escape') setDropdownOpen(false);
                 }}
                 onChange={(e) => setHeaderSearch(e.target.value)}
-                placeholder="ابحث بالاسم أو العامية: مرسام، براية، دفتر سلك، حبر..."
+                placeholder="ابحث عن منتج أو خدمة..."
                 className="w-full bg-zinc-100 focus:bg-white border border-zinc-200 focus:border-black rounded-full pr-8 pl-7 py-1.5 text-xs focus:outline-none transition-colors"
               />
               <button

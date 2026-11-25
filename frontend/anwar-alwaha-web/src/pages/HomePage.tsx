@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { categoriesApi } from '../api/categoriesApi';
 import { productsApi } from '../api/productsApi';
 import { Category } from '../types/category.types';
@@ -137,7 +137,12 @@ export const HomePage: React.FC = () => {
           className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
           loading="eager"
         />
-        <div className={`absolute inset-0 bg-gradient-to-l ${slide.gradient} opacity-90`} />
+        {/* Soft tint overlay so stationery photos look crisp and lively */}
+        <div className={`absolute inset-0 bg-gradient-to-l ${slide.gradient} opacity-35 mix-blend-multiply`} />
+
+        {/* Text protection vignette gradient (bottom and text side) */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-black/60" />
 
         <div className="relative z-10 h-full flex flex-col justify-end px-5 pb-6 text-white">
           <span className="inline-block text-xs font-bold bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full mb-2 self-start">
@@ -171,26 +176,91 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ===== QUICK INFO BAR ===== */}
-      <div className="bg-black text-white overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-6 px-4 py-2.5 w-max">
-          {INFO_ITEMS.map((item, i) => (
+      {/* ===== QUICK INFO BAR (SMOOTH CONTINUOUS TICKER MARQUEE) ===== */}
+      <div className="bg-black text-white overflow-hidden py-2 border-b border-zinc-900 select-none">
+        <div className="animate-marquee-ticker flex items-center gap-6 whitespace-nowrap">
+          {[...INFO_ITEMS, ...INFO_ITEMS, ...INFO_ITEMS].map((item, i) => (
             <span
               key={i}
-              className="flex items-center gap-1.5 text-[11px] font-bold whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold whitespace-nowrap shrink-0"
             >
               <span>{item.icon}</span>
               <span>{item.text}</span>
-              {i < INFO_ITEMS.length - 1 && <span className="text-zinc-600 mr-4">|</span>}
+              <span className="text-zinc-600 mr-5">|</span>
             </span>
           ))}
         </div>
       </div>
 
-      {/* ===== 15 CATEGORY CIRCLES ===== */}
-      <section className="bg-white py-4 px-4 border-b border-[#ebebeb]">
+      {/* ===== CATEGORIES SECTION ===== */}
+      <section className="bg-white py-3 sm:py-4 px-3 sm:px-4 border-b border-[#ebebeb]">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-15 gap-2 sm:gap-3">
+          {/* Mobile: Compact Smooth Horizontal Scrollable Strip (1 row, full 2-line labels) */}
+          <div className="flex sm:hidden overflow-x-auto no-scrollbar gap-2.5 py-1 px-1">
+            {/* "الكل" button */}
+            <button
+              onClick={() => handleSelectCategory(null)}
+              className="flex flex-col items-center gap-1 shrink-0 w-16 text-center cursor-pointer"
+            >
+              <div
+                className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all ${
+                  !selectedCategory
+                    ? 'border-black bg-black text-white scale-105 shadow-xs'
+                    : 'border-[#ebebeb] bg-zinc-50 hover:border-zinc-300'
+                }`}
+              >
+                <span className="text-base">🏠</span>
+              </div>
+              <span
+                className={`text-[10px] font-bold leading-tight text-center line-clamp-2 w-16 ${
+                  !selectedCategory ? 'text-black font-black' : 'text-zinc-600'
+                }`}
+              >
+                الكل
+              </span>
+            </button>
+
+            {/* Categories list */}
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() =>
+                  handleSelectCategory(cat.id === selectedCategory ? null : cat.id)
+                }
+                className="flex flex-col items-center gap-1 shrink-0 w-16 text-center cursor-pointer"
+              >
+                <div
+                  className={`w-11 h-11 rounded-full border-2 overflow-hidden bg-zinc-50 flex items-center justify-center transition-all ${
+                    selectedCategory === cat.id
+                      ? 'border-black scale-105 shadow-xs'
+                      : 'border-[#ebebeb] hover:border-zinc-300'
+                  }`}
+                >
+                  {cat.imageUrl ? (
+                    <img
+                      src={cat.imageUrl}
+                      alt={cat.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="text-lg">{cat.icon || '📦'}</span>
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] font-bold leading-tight text-center line-clamp-2 w-16 px-0.5 ${
+                    selectedCategory === cat.id ? 'text-black font-black' : 'text-zinc-600'
+                  }`}
+                  title={cat.title}
+                >
+                  {cat.title}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Desktop/Tablet (sm: and up): Multi-column grid */}
+          <div className="hidden sm:grid sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-15 gap-2 sm:gap-3">
             {/* "الكل" circle */}
             <button
               onClick={() => handleSelectCategory(null)}
@@ -206,7 +276,7 @@ export const HomePage: React.FC = () => {
                 <span className="text-lg">🏠</span>
               </div>
               <span
-                className={`text-[9px] font-bold leading-tight text-center ${
+                className={`text-[10px] font-bold leading-tight text-center ${
                   !selectedCategory ? 'text-black' : 'text-zinc-500'
                 }`}
               >
@@ -242,9 +312,10 @@ export const HomePage: React.FC = () => {
                   )}
                 </div>
                 <span
-                  className={`text-[9px] font-bold leading-tight text-center line-clamp-1 max-w-[52px] ${
-                    selectedCategory === cat.id ? 'text-black' : 'text-zinc-500'
+                  className={`text-[10px] font-bold leading-tight text-center line-clamp-2 max-w-[64px] ${
+                    selectedCategory === cat.id ? 'text-black font-black' : 'text-zinc-500'
                   }`}
+                  title={cat.title}
                 >
                   {cat.title}
                 </span>
@@ -260,8 +331,8 @@ export const HomePage: React.FC = () => {
       {/* ===== PRODUCTS SECTION ===== */}
       <section className="bg-white px-4 pt-4 pb-6">
         <div className="max-w-7xl mx-auto">
-          {/* Section header + Quick Search */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          {/* Section header (Clean without duplicate search bar) */}
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-black text-zinc-900">
                 {selectedCategory
@@ -281,20 +352,6 @@ export const HomePage: React.FC = () => {
                   مسح الفلتر ✕
                 </button>
               )}
-            </div>
-
-            <div className="relative w-full sm:w-80">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="ابحث بالاسم أو العامية: مرسام، براية، دفتر سلك، حبر..."
-                className="w-full bg-zinc-50 border border-zinc-200 text-xs pr-8 pl-3 py-2 rounded-xl focus:outline-none focus:border-zinc-900"
-              />
-              <Search size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             </div>
           </div>
 
