@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { ApiResponse, PagedResult } from '../types/api.types';
-import { Product, ProductDetail, ProductQueryParams } from '../types/product.types';
+import { Product, ProductDetail, ProductQueryParams, CatalogIndexItem } from '../types/product.types';
 
 function unwrapResponse<T>(raw: any): T | null {
   if (!raw) return null;
@@ -42,5 +42,33 @@ export const productsApi = {
       `/products/${encodeURIComponent(idOrSlug)}`
     );
     return unwrapResponse<ProductDetail>(res.data);
+  },
+
+  getCatalogIndex: async (): Promise<CatalogIndexItem[]> => {
+    try {
+      const res = await apiClient.get<ApiResponse<CatalogIndexItem[]>>('/products/catalog-index');
+      const unwrapped = unwrapResponse<CatalogIndexItem[]>(res.data);
+      if (unwrapped && Array.isArray(unwrapped) && unwrapped.length > 0) {
+        return unwrapped;
+      }
+      // Fallback: get top items from products endpoint
+      const pRes = await apiClient.get<ApiResponse<PagedResult<Product>>>('/products', {
+        params: { pageSize: 100 },
+      });
+      const pData = unwrapResponse<PagedResult<Product>>(pRes.data);
+      return (pData?.items || []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        oldPrice: p.oldPrice,
+        imageUrl: p.imageUrl,
+        categoryId: p.categoryId,
+        categoryTitle: p.categoryTitle,
+        barcode: p.barcode,
+        searchKeywords: p.searchKeywords,
+      }));
+    } catch {
+      return [];
+    }
   },
 };

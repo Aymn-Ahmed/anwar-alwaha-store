@@ -5,6 +5,7 @@ import { ToastProvider } from './context/ToastContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { CustomerProvider } from './context/CustomerContext';
+import { CatalogCacheProvider } from './context/CatalogCacheContext';
 import { App } from './App';
 import './index.css';
 
@@ -15,7 +16,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         <AuthProvider>
           <CustomerProvider>
             <CartProvider>
-              <App />
+              <CatalogCacheProvider>
+                <App />
+              </CatalogCacheProvider>
             </CartProvider>
           </CustomerProvider>
         </AuthProvider>

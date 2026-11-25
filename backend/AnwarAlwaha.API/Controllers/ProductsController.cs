@@ -27,6 +27,14 @@ public class ProductsController : ControllerBase
         return Ok(ApiResponse<PagedResult<ProductDto>>.Ok(result));
     }
 
+    [HttpGet("catalog-index")]
+    [ProducesResponseType(typeof(ApiResponse<List<CatalogIndexItemDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCatalogIndex()
+    {
+        var items = await _productService.GetCatalogIndexAsync();
+        return Ok(ApiResponse<List<CatalogIndexItemDto>>.Ok(items));
+    }
+
     [HttpGet("{idOrSlug}")]
     [ProducesResponseType(typeof(ApiResponse<ProductDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

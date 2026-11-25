@@ -130,15 +130,17 @@ export const CategoriesPage: React.FC = () => {
 
   const activeCategoryObj = categories.find((c) => c.id === selectedCategory);
   const totalPages = Math.ceil(totalCount / pageSize);
-  const isFocusedCategoryView = Boolean(selectedCategory);
+  const isSearchActive = Boolean(searchQuery.trim());
+  const isFocusedCategoryView = Boolean(selectedCategory) && !isSearchActive;
+  const showOverviewGrid = !isFocusedCategoryView && !isSearchActive;
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-6 sm:pt-8 pb-28 lg:pb-16 space-y-6">
       {/* =========================================================================
-          MODE 1: OVERVIEW MODE (When browsing all categories without filter)
+          MODE 1: OVERVIEW MODE (When browsing all categories without search or filter)
           Compact 2-Column Mobile Grid, 3-4 Columns Desktop with zero vertical bloat
           ========================================================================= */}
-      {!isFocusedCategoryView && (
+      {showOverviewGrid && (
         <section className="bg-white rounded-3xl border border-zinc-200/90 p-5 sm:p-7 shadow-xs space-y-5">
           {/* Header Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
@@ -158,13 +160,13 @@ export const CategoriesPage: React.FC = () => {
 
           {/* Compact Categories Grid (2 Columns on Mobile, 3 on Tablet, 4 on Desktop) */}
           {categoriesLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                 <div key={n} className="h-28 bg-zinc-100 rounded-2xl animate-pulse" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {categories.map((cat) => (
                 <div
                   key={cat.id}
@@ -198,6 +200,31 @@ export const CategoriesPage: React.FC = () => {
               ))}
             </div>
           )}
+        </section>
+      )}
+
+      {/* =========================================================================
+          MODE 2: SEARCH RESULTS HEADER (When user is searching)
+          Hides 15 category cards and displays search results right at the top
+          ========================================================================= */}
+      {isSearchActive && (
+        <section className="bg-white rounded-3xl border border-zinc-200/90 p-5 sm:p-6 shadow-xs flex items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-zinc-600 shrink-0">🔍</span>
+            <h1 className="text-sm sm:text-base font-black text-zinc-900 truncate">
+              نتائج البحث عن: "{searchQuery.trim()}"
+            </h1>
+            <span className="bg-black text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shrink-0">
+              {totalCount} منتج
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleBackToAllCategories}
+            className="text-xs font-bold text-red-600 hover:underline shrink-0 cursor-pointer"
+          >
+            مسح البحث ✕
+          </button>
         </section>
       )}
 
@@ -308,14 +335,35 @@ export const CategoriesPage: React.FC = () => {
             <input
               type="text"
               value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setLocalSearch(val);
+                if (val.trim().length >= 1) {
+                  updateParam('search', val.trim());
+                } else if (val === '') {
+                  updateParam('search', '');
+                }
+              }}
               placeholder="ابحث عن منتج بالاسم أو الكود..."
-              className="w-full bg-zinc-50 border border-zinc-200 text-xs pr-8 pl-3 py-2.5 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-colors"
+              className="w-full bg-zinc-50 border border-zinc-200 text-xs pr-8 pl-7 py-2.5 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-colors"
             />
             <Search
               size={14}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
             />
+            {localSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalSearch('');
+                  updateParam('search', '');
+                }}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black text-xs cursor-pointer"
+                aria-label="مسح البحث"
+              >
+                ✕
+              </button>
+            )}
           </form>
 
           {/* Sort Dropdown */}

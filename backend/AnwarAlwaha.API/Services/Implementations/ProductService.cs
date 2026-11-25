@@ -21,6 +21,44 @@ public class ProductService : IProductService
         _keywordEnrichment = keywordEnrichment;
     }
 
+    public async Task<List<CatalogIndexItemDto>> GetCatalogIndexAsync()
+    {
+        var categoryMap = await _unitOfWork.Categories.Query()
+            .AsNoTracking()
+            .Select(c => new { c.Id, c.Title })
+            .ToDictionaryAsync(c => c.Id, c => c.Title);
+
+        var products = await _unitOfWork.Products.Query()
+            .AsNoTracking()
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.SortOrder)
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Price,
+                p.OldPrice,
+                p.ImageUrl,
+                p.CategoryId,
+                p.Barcode,
+                p.SearchKeywords
+            })
+            .ToListAsync();
+
+        return products.Select(p => new CatalogIndexItemDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Price = p.Price,
+            OldPrice = p.OldPrice,
+            ImageUrl = p.ImageUrl,
+            CategoryId = p.CategoryId,
+            CategoryTitle = categoryMap.TryGetValue(p.CategoryId, out var title) ? title : null,
+            Barcode = p.Barcode,
+            SearchKeywords = p.SearchKeywords
+        }).ToList();
+    }
+
     public async Task<PagedResult<ProductDto>> GetProductsPagedAsync(ProductQueryParamsDto query, bool adminView = false)
     {
         var dbQuery = _unitOfWork.Products.Query().AsNoTracking();

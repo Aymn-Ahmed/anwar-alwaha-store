@@ -23,6 +23,19 @@ public class ProductDto
     public int ReviewsCount { get; set; }
 }
 
+public class CatalogIndexItemDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public decimal? OldPrice { get; set; }
+    public string? ImageUrl { get; set; }
+    public string CategoryId { get; set; } = string.Empty;
+    public string? CategoryTitle { get; set; }
+    public string? Barcode { get; set; }
+    public string? SearchKeywords { get; set; }
+}
+
 public class ProductDetailDto : ProductDto
 {
     public List<ProductDto> ComplementaryProducts { get; set; } = new();

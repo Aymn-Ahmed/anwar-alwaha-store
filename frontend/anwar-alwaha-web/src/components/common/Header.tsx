@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search, Sparkles, ArrowLeft, Loader2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useCustomer } from '../../context/CustomerContext';
+import { useCatalogCache } from '../../context/CatalogCacheContext';
 import { productsApi } from '../../api/productsApi';
 import { Product } from '../../types/product.types';
 import { PriceTag } from './PriceTag';
@@ -11,11 +12,9 @@ import { ProductModal } from '../products/ProductModal';
 export const Header: React.FC = () => {
   const { itemsCount, addToCart } = useCart();
   const { isLoggedIn, firstName, customer } = useCustomer();
+  const { getSuggestions } = useCatalogCache();
   const [menuOpen, setMenuOpen] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
-  const [liveProducts, setLiveProducts] = useState<Product[]>([]);
-  const [totalMatches, setTotalMatches] = useState(0);
-  const [isSearching, setIsSearching] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
@@ -36,76 +35,19 @@ export const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced live search (250ms) when user types 2+ characters
-  useEffect(() => {
-    const query = headerSearch.trim();
-    if (query.length < 2) {
-      setLiveProducts([]);
-      setTotalMatches(0);
-      setIsSearching(false);
-      setDropdownOpen(false);
-      return;
-    }
-
-    setDropdownOpen(true);
-    setIsSearching(true);
-
-    const timer = setTimeout(async () => {
-      try {
-        const res = await productsApi.getProducts({ search: query, pageSize: 5 });
-        setLiveProducts((res.items || []).slice(0, 5));
-        setTotalMatches(res.totalCount || (res.items ? res.items.length : 0));
-      } catch {
-        setLiveProducts([]);
-        setTotalMatches(0);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 250);
-
-    return () => clearTimeout(timer);
-  }, [headerSearch]);
-
-  // Extract quick search phrase suggestions from matching product names and SearchKeywords
+  // Instant zero-latency suggestions on every keystroke
   const keywordSuggestions = useMemo(() => {
-    const query = headerSearch.trim().toLowerCase();
-    if (query.length < 2 || liveProducts.length === 0) return [];
+    return getSuggestions(headerSearch, 7);
+  }, [headerSearch, getSuggestions]);
 
-    const phrases = new Set<string>();
-
-    for (const prod of liveProducts) {
-      // Short clean phrases from product name
-      const nameWords = prod.name
-        .replace(/[^\u0600-\u06FFa-zA-Z0-9\s]/g, ' ')
-        .split(/\s+/)
-        .filter(Boolean);
-
-      if (nameWords.length >= 2) {
-        phrases.add(nameWords.slice(0, 2).join(' '));
-      }
-      if (nameWords.length >= 3) {
-        phrases.add(nameWords.slice(0, 3).join(' '));
-      }
-
-      // Extract matching phrases from searchKeywords
-      if (prod.searchKeywords) {
-        const kwParts = prod.searchKeywords
-          .split(/[,،|]/)
-          .map((s) => s.trim())
-          .filter((s) => s.length >= 2 && s.length <= 28);
-
-        for (const kw of kwParts) {
-          if (kw.toLowerCase().includes(query) || phrases.size < 4) {
-            phrases.add(kw);
-          }
-          if (phrases.size >= 6) break;
-        }
-      }
-      if (phrases.size >= 6) break;
+  // Open dropdown when typing 1+ characters
+  useEffect(() => {
+    if (headerSearch.trim().length >= 1) {
+      setDropdownOpen(true);
+    } else {
+      setDropdownOpen(false);
     }
-
-    return Array.from(phrases).slice(0, 5);
-  }, [headerSearch, liveProducts]);
+  }, [headerSearch]);
 
   const handleHeaderSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,14 +124,10 @@ export const Header: React.FC = () => {
               />
               <button
                 type="submit"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black cursor-pointer"
                 aria-label="بحث"
               >
-                {isSearching ? (
-                  <Loader2 size={13} className="animate-spin text-zinc-600" />
-                ) : (
-                  <Search size={13} />
-                )}
+                <Search size={14} />
               </button>
               {headerSearch && (
                 <button
@@ -207,109 +145,61 @@ export const Header: React.FC = () => {
             </form>
 
             {/* Live Search Autocomplete Dropdown */}
-            {dropdownOpen && headerSearch.trim().length >= 2 && (
-              <div className="absolute top-full right-0 left-0 mt-2 w-full sm:w-[380px] bg-white rounded-2xl border border-zinc-200 shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                {isSearching && liveProducts.length === 0 ? (
-                  <div className="p-5 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
-                    <Loader2 size={15} className="animate-spin" />
-                    <span>جاري البحث الذكي عن "{headerSearch.trim()}"...</span>
-                  </div>
-                ) : liveProducts.length === 0 ? (
-                  <div className="p-5 text-center space-y-2">
+            {dropdownOpen && headerSearch.trim().length >= 1 && (
+              <div className="fixed inset-x-3 top-14 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:w-[420px] sm:top-full sm:mt-2 bg-white rounded-2xl border border-zinc-200 shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                {keywordSuggestions.length === 0 ? (
+                  <div className="p-4 text-center space-y-1">
                     <p className="text-xs font-bold text-zinc-700">
-                      لا توجد أصناف مطابقة لـ "{headerSearch.trim()}"
+                      اضغط بحث لعرض نتائج: "{headerSearch.trim()}"
                     </p>
-                    <p className="text-[11px] text-zinc-400">
-                      جرّب البحث بكلمة أخرى مثل: مرسام، دفتر، حبر، ورق A4
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleHeaderSearch({ preventDefault: () => {} } as any)}
+                      className="text-[11px] font-black text-emerald-600 hover:underline pt-1 inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>عرض النتائج الآن</span>
+                      <ArrowLeft size={11} />
+                    </button>
                   </div>
                 ) : (
-                  <div className="divide-y divide-zinc-100 max-h-[75vh] overflow-y-auto">
-                    {/* 1. Quick Search Phrase Suggestions */}
-                    {keywordSuggestions.length > 0 && (
-                      <div className="p-3 bg-zinc-50/70 space-y-2">
-                        <div className="flex items-center gap-1 text-[10px] font-black text-zinc-500">
-                          <Sparkles size={11} className="text-amber-500" />
-                          <span>اقتراحات بحث سريعة ومرادفات:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {keywordSuggestions.map((phrase) => (
-                            <button
-                              key={phrase}
-                              type="button"
-                              onClick={() => handleSelectPhrase(phrase)}
-                              className="inline-flex items-center gap-1 bg-white hover:bg-black hover:text-white text-zinc-700 border border-zinc-200 text-[11px] font-bold px-2.5 py-1 rounded-full transition-colors"
-                            >
-                              <Search size={10} />
-                              <span>{phrase}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div>
+                    {/* Header bar */}
+                    <div className="px-3.5 py-2 bg-zinc-50 border-b border-zinc-100 flex items-center justify-between text-[10px] font-black text-zinc-400">
+                      <span className="flex items-center gap-1">
+                        <Sparkles size={11} className="text-amber-500" />
+                        <span>اقتراحات البحث المباشرة</span>
+                      </span>
+                      <span>{keywordSuggestions.length} اقتراح</span>
+                    </div>
 
-                    {/* 2. Top 5 Matching Products */}
-                    <div className="p-2 space-y-1">
-                      <div className="px-2 py-1 flex items-center justify-between text-[10px] font-black text-zinc-400">
-                        <span>أبرز الأصناف المطابقة</span>
-                        <span>{totalMatches} نتيجة</span>
-                      </div>
-
-                      {liveProducts.map((prod) => (
-                        <div
-                          key={prod.id}
-                          onClick={() => handleSelectProduct(prod)}
-                          className="flex items-center justify-between gap-2.5 p-2 rounded-xl hover:bg-zinc-50 cursor-pointer transition-colors group"
+                    {/* Clean Deduplicated Text Keyword Suggestions */}
+                    <div className="divide-y divide-zinc-50 max-h-[60vh] overflow-y-auto">
+                      {keywordSuggestions.map((phrase) => (
+                        <button
+                          key={phrase}
+                          type="button"
+                          onClick={() => handleSelectPhrase(phrase)}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-50 text-right transition-colors group cursor-pointer"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            {/* Thumbnail */}
-                            <div className="w-11 h-11 rounded-xl bg-zinc-100 border border-zinc-200/70 overflow-hidden shrink-0 flex items-center justify-center">
-                              {prod.imageUrl ? (
-                                <img
-                                  src={prod.imageUrl}
-                                  alt={prod.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-lg">{prod.categoryIcon || '📦'}</span>
-                              )}
-                            </div>
-
-                            {/* Name & Price */}
-                            <div className="min-w-0 flex-1">
-                              <h4 className="text-xs font-extrabold text-zinc-900 group-hover:text-[#c40d00] truncate">
-                                {prod.name}
-                              </h4>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <PriceTag price={prod.price} size="sm" />
-                                {prod.categoryTitle && (
-                                  <span className="text-[10px] text-zinc-400 truncate">
-                                    • {prod.categoryTitle}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                            <Search
+                              size={14}
+                              className="text-zinc-400 group-hover:text-black shrink-0"
+                            />
+                            <span className="text-xs sm:text-sm font-bold text-zinc-800 group-hover:text-black truncate">
+                              {phrase}
+                            </span>
                           </div>
-
-                          {/* Quick Add to Cart Button */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              addToCart(prod, 1);
-                            }}
-                            className="shrink-0 bg-black hover:bg-[#c40d00] text-white text-[11px] font-black px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition-colors shadow-sm"
-                            title="إضافة سريعة للسلة"
-                          >
-                            <span>🛒</span>
-                            <span>أضف</span>
-                          </button>
-                        </div>
+                          <ArrowLeft
+                            size={13}
+                            className="text-zinc-300 group-hover:text-black shrink-0 transition-transform group-hover:-translate-x-0.5"
+                          />
+                        </button>
                       ))}
                     </div>
 
-                    {/* 3. Footer Button: View All Search Results */}
-                    <div className="p-2.5 bg-zinc-50">
+                    {/* Bottom Action: View all results */}
+                    <div className="p-2.5 bg-zinc-50 border-t border-zinc-100">
                       <button
                         type="button"
                         onClick={() => {
@@ -317,9 +207,9 @@ export const Header: React.FC = () => {
                           setDropdownOpen(false);
                           navigate(`/categories?search=${encodeURIComponent(q)}`);
                         }}
-                        className="w-full bg-zinc-900 hover:bg-black text-white text-xs font-black py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                        className="w-full bg-black hover:bg-zinc-800 text-white text-xs font-black py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
-                        <span>عرض جميع نتائج البحث لـ ({headerSearch.trim()})</span>
+                        <span>عرض جميع نتائج البحث لـ "{headerSearch.trim()}"</span>
                         <ArrowLeft size={13} />
                       </button>
                     </div>

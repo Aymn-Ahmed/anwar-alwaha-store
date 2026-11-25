@@ -5,6 +5,7 @@ namespace AnwarAlwaha.API.Services.Interfaces;
 
 public interface IProductService
 {
+    Task<List<CatalogIndexItemDto>> GetCatalogIndexAsync();
     Task<PagedResult<ProductDto>> GetProductsPagedAsync(ProductQueryParamsDto query, bool adminView = false);
     Task<ProductDetailDto?> GetProductByIdAsync(Guid id, bool includeDetails = false);
     Task<ProductDetailDto?> GetProductByIdOrSlugAsync(string idOrSlug, bool includeDetails = false);

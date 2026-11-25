@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { categoriesApi } from '../api/categoriesApi';
 import { productsApi } from '../api/productsApi';
@@ -50,6 +50,7 @@ const INFO_ITEMS = [
 const HOME_PAGE_SIZE = 40;
 
 export const HomePage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -61,6 +62,10 @@ export const HomePage: React.FC = () => {
   const [heroSlide, setHeroSlide] = useState(0);
   const heroTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
+
+  const urlSearch = searchParams.get('search') || '';
+  const effectiveSearch = (searchQuery || urlSearch).trim();
+  const isSearching = Boolean(effectiveSearch);
 
   // Fetch categories independently so it never blocks products
   useEffect(() => {
@@ -84,7 +89,7 @@ export const HomePage: React.FC = () => {
     productsApi
       .getAll({
         categoryId: selectedCategory || undefined,
-        search: searchQuery.trim() || undefined,
+        search: effectiveSearch || undefined,
         page,
         pageSize: HOME_PAGE_SIZE,
         sortBy: 'newest',
@@ -107,7 +112,7 @@ export const HomePage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedCategory, searchQuery, page]);
+  }, [selectedCategory, effectiveSearch, page]);
 
   // Auto-rotate hero
   useEffect(() => {
@@ -129,8 +134,40 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="pb-20 lg:pb-10">
-      {/* ===== HERO SECTION ===== */}
-      <section className="relative h-64 sm:h-72 overflow-hidden">
+      {/* Search active notification & quick clear bar (immediately replaces hero & categories) */}
+      {isSearching && (
+        <div className="bg-white border-b border-zinc-200 px-4 py-4 mb-2 shadow-2xs">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-zinc-600 shrink-0">🔍</span>
+              <h1 className="text-sm sm:text-base font-black text-zinc-900 truncate">
+                نتائج البحث عن: "{effectiveSearch}"
+              </h1>
+              <span className="bg-black text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shrink-0">
+                {totalCount} منتج
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                const next = new URLSearchParams(searchParams);
+                next.delete('search');
+                setSearchParams(next);
+              }}
+              className="text-xs font-bold text-red-600 hover:underline shrink-0 cursor-pointer"
+            >
+              مسح البحث ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Hero & Categories are only rendered when NOT searching */}
+      {!isSearching && (
+        <>
+          {/* ===== HERO SECTION ===== */}
+          <section className="relative h-64 sm:h-72 overflow-hidden">
         <img
           src={slide.bgImage}
           alt={slide.mainTitle}
@@ -327,6 +364,8 @@ export const HomePage: React.FC = () => {
 
       {/* Divider */}
       <div className="h-2 bg-[#f7f7f8]" />
+    </>
+  )}
 
       {/* ===== PRODUCTS SECTION ===== */}
       <section className="bg-white px-4 pt-4 pb-6">

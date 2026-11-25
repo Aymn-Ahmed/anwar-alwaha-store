@@ -1,3 +1,15 @@
+export interface CatalogIndexItem {
+  id: string;
+  name: string;
+  price: number;
+  oldPrice?: number | null;
+  imageUrl?: string | null;
+  categoryId: string;
+  categoryTitle?: string | null;
+  barcode?: string | null;
+  searchKeywords?: string | null;
+}
+
 export interface Product {
   id: string;
   categoryId: string;
