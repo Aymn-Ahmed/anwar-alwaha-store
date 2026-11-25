@@ -30,6 +30,7 @@ import { Product } from '../types/product.types';
 import { OrderResponse } from '../types/order.types';
 import { InitiatePaymentResponse } from '../types/payment.types';
 import { PriceTag } from '../components/common/PriceTag';
+import { DeliveryLocationMap } from '../components/checkout/DeliveryLocationMap';
 
 declare global {
   interface Window {
@@ -224,8 +225,10 @@ export const CheckoutPage: React.FC = () => {
               ? customerAddress.trim() || 'خميس مشيط / أبها'
               : undefined,
           deliveryMethod,
-          customerLocationLat: deliveryMethod === 'delivery' ? customerLocationLat : undefined,
-          customerLocationLng: deliveryMethod === 'delivery' ? customerLocationLng : undefined,
+          customerLocationLat:
+            deliveryMethod === 'delivery' ? customerLocationLat || 18.3093 : undefined,
+          customerLocationLng:
+            deliveryMethod === 'delivery' ? customerLocationLng || 42.7336 : undefined,
           customerNotes: customerNotes.trim() || undefined,
           couponCode: appliedCoupon?.code || undefined,
           items: items.map((i: CartItem) => ({
@@ -709,32 +712,24 @@ export const CheckoutPage: React.FC = () => {
                       type="text"
                       value={customerAddress}
                       onChange={(e) => setCustomerAddress(e.target.value)}
-                      placeholder="اسم الحي، الشارع، أو رابط الموقع..."
+                      placeholder="اسم الحي، الشارع، أو وصف البيت..."
                       className="w-full text-xs p-3 pr-9 rounded-xl border border-zinc-300 focus:outline-none focus:border-zinc-900"
                     />
                     <MapPin size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={handleDetectLocation}
-                      disabled={isLocating}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold transition-all disabled:opacity-50 cursor-pointer"
-                    >
-                      <Navigation size={13} className={isLocating ? 'animate-spin text-emerald-600' : 'text-emerald-600'} />
-                      <span>{isLocating ? 'جاري تحديد موقعك...' : locationSuccess ? '✓ تم تحديد موقعك الجغرافي بنجاح' : 'تحديد موقعي بدقة عبر GPS (الخريطة)'}</span>
-                    </button>
-                    {customerLocationLat && customerLocationLng && (
-                      <a
-                        href={`https://www.google.com/maps?q=${customerLocationLat},${customerLocationLng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
-                      >
-                        <span>معاينة في Google Maps 🗺️</span>
-                      </a>
-                    )}
-                  </div>
+
+                  {/* Real, Visible, Interactive Embedded Map */}
+                  <DeliveryLocationMap
+                    lat={customerLocationLat}
+                    lng={customerLocationLng}
+                    onChange={(newLat, newLng) => {
+                      setCustomerLocationLat(newLat);
+                      setCustomerLocationLng(newLng);
+                      if (!customerAddress || customerAddress === 'خميس مشيط / أبها') {
+                        setCustomerAddress(`موقع محدد عبر الخريطة (${newLat.toFixed(4)}, ${newLng.toFixed(4)})`);
+                      }
+                    }}
+                  />
                 </div>
               )}
 

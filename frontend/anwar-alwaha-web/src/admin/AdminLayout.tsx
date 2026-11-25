@@ -8,8 +8,10 @@ import {
   Moon,
   ExternalLink,
   ShieldCheck,
+  QrCode,
 } from 'lucide-react';
 import { AdminSidebar } from './components/AdminSidebar';
+import { StoreQrPosterModal } from './components/StoreQrPosterModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { adminApi } from '../api/adminApi';
@@ -46,6 +48,7 @@ function playNotificationChime() {
 
 export const AdminLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   // Default to high-contrast Light Mode ('light')
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     try {
@@ -138,7 +141,11 @@ export const AdminLayout: React.FC = () => {
       }`}
     >
       {/* Sidebar */}
-      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onOpenQrModal={() => setQrModalOpen(true)}
+      />
 
       {/* Main Body */}
       <div className="flex-1 flex flex-col min-w-0 lg:pr-64">
@@ -198,7 +205,18 @@ export const AdminLayout: React.FC = () => {
               </span>
             </button>
 
-            {/* 3. Preview Storefront in New Tab */}
+            {/* 3. Store QR Code & Printable Poster */}
+            <button
+              type="button"
+              onClick={() => setQrModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              title="إنشاء وتحميل أو طباعة باركود وبوستر المتجر"
+            >
+              <QrCode size={14} className="text-amber-400" />
+              <span>باركود المتجر للطباعة 🏷️</span>
+            </button>
+
+            {/* 4. Preview Storefront in New Tab */}
             <Link
               to="/"
               target="_blank"
@@ -223,6 +241,12 @@ export const AdminLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Store QR & Printable Poster Generator Modal */}
+      <StoreQrPosterModal
+        isOpen={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+      />
     </div>
   );
 };

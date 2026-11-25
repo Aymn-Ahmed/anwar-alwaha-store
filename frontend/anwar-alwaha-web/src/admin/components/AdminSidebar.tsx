@@ -14,6 +14,7 @@ import {
   LogOut,
   ExternalLink,
   Store,
+  QrCode,
   X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -21,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 interface AdminSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenQrModal?: () => void;
 }
 
 const NAV_ITEMS = [
@@ -36,7 +38,11 @@ const NAV_ITEMS = [
   { to: '/admin/error-logs', label: 'سجل الأخطاء ⚠️', icon: AlertTriangle },
 ];
 
-export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
+export const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  isOpen,
+  onClose,
+  onOpenQrModal,
+}) => {
   const { user, logout } = useAuth();
 
   return (
@@ -108,6 +114,25 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-gray-800 space-y-2">
+          {onOpenQrModal && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenQrModal();
+              }}
+              className="flex items-center justify-between w-full px-3 py-2 text-xs text-amber-300 hover:text-amber-200 bg-amber-950/40 border border-amber-800/40 hover:bg-amber-900/40 rounded-xl transition-all font-bold"
+            >
+              <div className="flex items-center gap-2">
+                <QrCode size={15} className="text-amber-400" />
+                <span>باركود المتجر للطباعة 🏷️</span>
+              </div>
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono">
+                HQ
+              </span>
+            </button>
+          )}
+
           <Link
             to="/"
             target="_blank"
