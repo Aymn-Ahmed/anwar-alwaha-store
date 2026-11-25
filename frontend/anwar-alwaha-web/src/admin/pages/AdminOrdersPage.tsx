@@ -14,6 +14,8 @@ import {
   X,
   FileText,
   MapPin,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { adminApi } from '../../api/adminApi';
 import { OrderAdminSummary } from '../../types/admin.types';
@@ -25,6 +27,19 @@ export const AdminOrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<OrderAdminSummary[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Real-time Search & Quick Copy States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (text: string | undefined | null, id: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => {
+      setCopiedId((prev) => (prev === id ? null : prev));
+    }, 1800);
+  };
 
   // Selected Order for Detail Modal
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -109,6 +124,16 @@ export const AdminOrdersPage: React.FC = () => {
     }
   };
 
+  const filteredOrders = orders.filter((ord) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return (
+      (ord.orderCode || '').toLowerCase().includes(q) ||
+      (ord.customerName || '').toLowerCase().includes(q) ||
+      (ord.customerPhone || '').toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -127,6 +152,33 @@ export const AdminOrdersPage: React.FC = () => {
         >
           <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
         </button>
+      </div>
+
+      {/* Real-time Search Filter Bar */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3 flex flex-col sm:flex-row items-center gap-3">
+        <div className="relative flex-1 w-full">
+          <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="بحث فوري برقم الطلب (AW-...)، اسم العميل، أو رقم الجوال..."
+            className="w-full bg-gray-950 border border-gray-800 text-white pr-9 pl-4 py-2.5 rounded-xl text-xs placeholder:text-gray-500 focus:outline-none focus:border-brand-500"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs bg-gray-800 px-1.5 py-0.5 rounded"
+            >
+              مسح
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <span className="text-[11px] font-bold text-brand-400 shrink-0">
+            تم العثور على ({filteredOrders.length}) طلب
+          </span>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -179,19 +231,56 @@ export const AdminOrdersPage: React.FC = () => {
                     <span>جاري تحميل الطلبات...</span>
                   </td>
                 </tr>
-              ) : orders.length === 0 ? (
+              ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-gray-500">
-                    لا توجد طلبات مسجلة بهذه الحالة
+                    {searchQuery ? 'لا توجد نتائج مطابقة لبحثك' : 'لا توجد طلبات مسجلة بهذه الحالة'}
                   </td>
                 </tr>
               ) : (
-                orders.map((ord) => (
+                filteredOrders.map((ord) => (
                   <tr key={ord.id} className="hover:bg-gray-800/40 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-black text-white">{ord.orderCode}</td>
+                    <td className="py-3.5 px-4 font-mono font-black text-white">
+                      <div className="flex items-center gap-1.5">
+                        <span>{ord.orderCode}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(ord.orderCode, `code-${ord.id}`)}
+                          className="p-1 rounded hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                          title="نسخ كود الطلب"
+                        >
+                          {copiedId === `code-${ord.id}` ? (
+                            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                              <Check size={11} />
+                              <span>تم</span>
+                            </span>
+                          ) : (
+                            <Copy size={12} />
+                          )}
+                        </button>
+                      </div>
+                    </td>
                     <td className="py-3.5 px-4 text-gray-200 font-bold">{ord.customerName}</td>
                     <td className="py-3.5 px-4 text-gray-400 font-mono" dir="ltr">
-                      {ord.customerPhone || '-'}
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <span>{ord.customerPhone || '-'}</span>
+                        {ord.customerPhone && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(ord.customerPhone, `phone-${ord.id}`)}
+                            className="p-1 rounded hover:bg-gray-800 text-gray-500 hover:text-white transition-colors"
+                            title="نسخ رقم الجوال"
+                          >
+                            {copiedId === `phone-${ord.id}` ? (
+                              <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                                <Check size={11} />
+                              </span>
+                            ) : (
+                              <Copy size={11} />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 text-gray-300">
                       {ord.deliveryMethod === 'branch' ? (
@@ -218,21 +307,37 @@ export const AdminOrdersPage: React.FC = () => {
                       {ord.totalAmount.toFixed(2)} ر.س
                     </td>
                     <td className="py-3.5 px-4">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          ord.status === 'delivered'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : ord.status === 'processing' || ord.status === 'paid'
-                            ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                            : ord.status === 'ready'
-                            ? 'bg-purple-950 text-purple-400 border border-purple-800'
-                            : ord.status === 'cancelled'
-                            ? 'bg-red-950 text-red-400 border border-red-800'
-                            : 'bg-amber-950 text-amber-400 border border-amber-800'
-                        }`}
-                      >
-                        {ord.status}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            ord.status === 'delivered'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                              : ord.status === 'processing' || ord.status === 'paid'
+                              ? 'bg-blue-950 text-blue-400 border border-blue-800'
+                              : ord.status === 'ready'
+                              ? 'bg-purple-950 text-purple-400 border border-purple-800'
+                              : ord.status === 'cancelled'
+                              ? 'bg-red-950 text-red-400 border border-red-800'
+                              : 'bg-amber-950 text-amber-400 border border-amber-800'
+                          }`}
+                        >
+                          {ord.status}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(ord.status, `status-${ord.id}`)}
+                          className="p-1 rounded hover:bg-gray-800 text-gray-500 hover:text-white transition-colors"
+                          title="نسخ حالة الطلب"
+                        >
+                          {copiedId === `status-${ord.id}` ? (
+                            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                              <Check size={10} />
+                            </span>
+                          ) : (
+                            <Copy size={10} />
+                          )}
+                        </button>
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 text-gray-500">
                       {new Date(ord.createdAt).toLocaleDateString('ar-SA')}

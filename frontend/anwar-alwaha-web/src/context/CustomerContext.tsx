@@ -31,6 +31,7 @@ export interface CustomerSavedOrder {
   deliveryMethod: string;
   status: string;
   paymentStatus?: string;
+  adminNotes?: string;
   isReviewed?: boolean;
   totalAmount: number;
   createdAt: string;
@@ -154,6 +155,7 @@ export const CustomerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             deliveryMethod: apiOrder.deliveryMethod,
             status: apiOrder.status,
             paymentStatus: apiOrder.paymentStatus,
+            adminNotes: apiOrder.adminNotes,
             isReviewed: apiOrder.isReviewed,
             totalAmount: apiOrder.totalAmount,
             createdAt: apiOrder.createdAt,

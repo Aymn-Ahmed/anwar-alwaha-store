@@ -126,11 +126,14 @@ export const AccountPage: React.FC = () => {
     }
   }, [customer.name, customer.phone, customer.email]);
 
+  const isCancelledStatus = (status: string) =>
+    ['cancelled', 'canceled', 'ملغي'].includes((status || '').toLowerCase());
+
   useEffect(() => {
     if (isLoggedIn) {
       refreshAccountOrders();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, activeTab]);
 
   const handleTabChange = (tab: PortalTab) => {
     setActiveTab(tab);
@@ -483,13 +486,21 @@ export const AccountPage: React.FC = () => {
   // Helper: Render Tracked Order Card
   // ============================================================================
   function renderTrackedOrderCard(ord: OrderResponse) {
+    const isCancelled = isCancelledStatus(ord.status);
     const stageIdx = getStageIndex(ord.status);
     return (
       <div className="bg-zinc-50 rounded-2xl border border-zinc-200 p-5 space-y-5 mt-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-3">
-          <div>
-            <span className="text-[10px] text-zinc-400 font-bold block">رمز الطلب</span>
-            <span className="font-mono font-black text-base text-zinc-900">{ord.orderCode}</span>
+          <div className="flex items-center gap-2">
+            <div>
+              <span className="text-[10px] text-zinc-400 font-bold block">رمز الطلب</span>
+              <span className="font-mono font-black text-base text-zinc-900">{ord.orderCode}</span>
+            </div>
+            {isCancelled && (
+              <span className="bg-red-50 text-red-700 border border-red-200 text-[10px] font-black px-2 py-0.5 rounded-full mr-2">
+                ✕ تم إلغاء الطلب
+              </span>
+            )}
           </div>
           <div className="text-left">
             <span className="text-[10px] text-zinc-400 font-bold block">تاريخ الطلب</span>
@@ -499,36 +510,51 @@ export const AccountPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 4-Stage Status Progress */}
-        <div className="grid grid-cols-4 gap-2 text-center">
-          {ORDER_STAGES.map((st, idx) => {
-            const passed = idx <= stageIdx;
-            const current = idx === stageIdx;
-            const Icon = st.icon;
-            return (
-              <div key={st.key} className="flex flex-col items-center gap-1.5">
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                    current
-                      ? 'bg-black text-white ring-4 ring-zinc-900/10 scale-110'
-                      : passed
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-zinc-200 text-zinc-400'
-                  }`}
-                >
-                  <Icon size={16} />
+        {/* Status Display: Cancellation Banner OR 4-Stage Stepper */}
+        {isCancelled ? (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3 text-red-900">
+            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold text-lg">
+              ✕
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-black text-sm">تم إلغاء هذا الطلب</h4>
+              <p className="text-xs text-red-700">
+                تم إلغاء الطلب من قبل الإدارة.
+                {ord.adminNotes ? ` (سبب الإلغاء: ${ord.adminNotes})` : ''}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-2 text-center">
+            {ORDER_STAGES.map((st, idx) => {
+              const passed = idx <= stageIdx;
+              const current = idx === stageIdx;
+              const Icon = st.icon;
+              return (
+                <div key={st.key} className="flex flex-col items-center gap-1.5">
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                      current
+                        ? 'bg-black text-white ring-4 ring-zinc-900/10 scale-110'
+                        : passed
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-zinc-200 text-zinc-400'
+                    }`}
+                  >
+                    <Icon size={16} />
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold ${
+                      current ? 'text-black font-black' : passed ? 'text-zinc-800' : 'text-zinc-400'
+                    }`}
+                  >
+                    {st.label}
+                  </span>
                 </div>
-                <span
-                  className={`text-[10px] font-bold ${
-                    current ? 'text-black font-black' : passed ? 'text-zinc-800' : 'text-zinc-400'
-                  }`}
-                >
-                  {st.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="space-y-2 border-t border-zinc-200 pt-3">
           {ord.items.map((it) => (
@@ -693,6 +719,7 @@ export const AccountPage: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {customer.orders.map((ord) => {
+                const isCancelled = isCancelledStatus(ord.status);
                 const stageIdx = getStageIndex(ord.status);
                 return (
                   <div
@@ -705,30 +732,36 @@ export const AccountPage: React.FC = () => {
                         <span className="font-mono font-black text-sm sm:text-base bg-zinc-100 px-3 py-1 rounded-xl text-zinc-900">
                           فاتورة #{ord.orderCode}
                         </span>
-                        <span
-                          className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                            ord.paymentStatus === 'paid' ||
+                        {isCancelled ? (
+                          <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                            ✕ تم إلغاء الطلب
+                          </span>
+                        ) : (
+                          <span
+                            className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                              ord.paymentStatus === 'paid' ||
+                              ['paid', 'processing', 'ready', 'shipping', 'delivered'].includes(
+                                (ord.status || '').toLowerCase()
+                              )
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            }`}
+                          >
+                            {ord.paymentStatus === 'paid' ||
                             ['paid', 'processing', 'ready', 'shipping', 'delivered'].includes(
                               (ord.status || '').toLowerCase()
                             )
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                          }`}
-                        >
-                          {ord.paymentStatus === 'paid' ||
-                          ['paid', 'processing', 'ready', 'shipping', 'delivered'].includes(
-                            (ord.status || '').toLowerCase()
-                          )
-                            ? '✓ مدفوع / مؤكد'
-                            : 'بانتظار التأكيد'}
-                        </span>
+                              ? '✓ مدفوع / مؤكد'
+                              : 'بانتظار التأكيد'}
+                          </span>
+                        )}
                         <span className="text-xs text-zinc-400">
                           {new Date(ord.createdAt).toLocaleDateString('ar-SA')}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {ord.status.toLowerCase() !== 'cancelled' && ord.items.some((i) => i.productId || i.productSnapshot?.id) && (
+                        {!isCancelled && ord.items.some((i) => i.productId || i.productSnapshot?.id) && (
                           <button
                             type="button"
                             onClick={() => {
@@ -763,40 +796,55 @@ export const AccountPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 4-Stage Status Bar */}
-                    <div className="grid grid-cols-4 gap-2 text-center py-2">
-                      {ORDER_STAGES.map((st, idx) => {
-                        const passed = idx <= stageIdx;
-                        const current = idx === stageIdx;
-                        const Icon = st.icon;
-                        return (
-                          <div key={st.key} className="flex flex-col items-center gap-1.5">
-                            <div
-                              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                                current
-                                  ? 'bg-black text-white ring-4 ring-zinc-900/10 scale-110'
-                                  : passed
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-zinc-100 text-zinc-400'
-                              }`}
-                            >
-                              <Icon size={15} />
+                    {/* Status Display: Cancellation Banner OR 4-Stage Stepper */}
+                    {isCancelled ? (
+                      <div className="p-3.5 bg-red-50/80 border border-red-200 rounded-2xl flex items-center gap-3 text-red-900">
+                        <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold text-base">
+                          ✕
+                        </div>
+                        <div>
+                          <p className="font-black text-xs text-red-800">الطلب ملغي من قبل الإدارة</p>
+                          <p className="text-[11px] text-zinc-600 mt-0.5">
+                            تم إلغاء هذا الطلب.
+                            {ord.adminNotes ? ` ملاحظة الإدارة: "${ord.adminNotes}"` : ' يرجى التواصل معنا عبر واتساب لمزيد من التفاصيل.'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2 text-center py-2">
+                        {ORDER_STAGES.map((st, idx) => {
+                          const passed = idx <= stageIdx;
+                          const current = idx === stageIdx;
+                          const Icon = st.icon;
+                          return (
+                            <div key={st.key} className="flex flex-col items-center gap-1.5">
+                              <div
+                                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                                  current
+                                    ? 'bg-black text-white ring-4 ring-zinc-900/10 scale-110'
+                                    : passed
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-zinc-100 text-zinc-400'
+                                }`}
+                              >
+                                <Icon size={15} />
+                              </div>
+                              <span
+                                className={`text-[10px] sm:text-xs font-bold ${
+                                  current
+                                    ? 'text-black font-black'
+                                    : passed
+                                    ? 'text-zinc-800'
+                                    : 'text-zinc-400'
+                                }`}
+                              >
+                                {st.label}
+                              </span>
                             </div>
-                            <span
-                              className={`text-[10px] sm:text-xs font-bold ${
-                                current
-                                  ? 'text-black font-black'
-                                  : passed
-                                  ? 'text-zinc-800'
-                                  : 'text-zinc-400'
-                              }`}
-                            >
-                              {st.label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {/* Order Items */}
                     <div className="space-y-2 border-t border-zinc-100 pt-3">
