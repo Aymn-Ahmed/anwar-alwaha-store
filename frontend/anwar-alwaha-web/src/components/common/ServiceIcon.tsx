@@ -31,18 +31,19 @@ const ICON_MAP: Record<string, LucideIcon> = {
   print: Printer,
   palette: Palette,
   art: Palette,
+  brush: Palette,
   coffee: Coffee,
   cup: Coffee,
   themes: Coffee,
   'graduation-cap': GraduationCap,
   graduation: GraduationCap,
   grad: GraduationCap,
+  school: GraduationCap,
   'file-text': FileText,
   file: FileText,
   office: FileText,
   zap: Zap,
   bolt: Zap,
-  school: Zap,
   sparkles: Sparkles,
   'shopping-bag': ShoppingBag,
   stationery: ShoppingBag,
@@ -53,8 +54,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   layers: Layers,
   stamp: Stamp,
   book: BookOpen,
+  'book-open': BookOpen,
   scissors: Scissors,
   pen: PenTool,
+  'pen-tool': PenTool,
 };
 
 export const SERVICE_ICON_OPTIONS = [
@@ -78,7 +81,7 @@ export const ServiceIcon: React.FC<ServiceIconProps> = ({
   color,
   className = '',
 }) => {
-  const key = (iconName || 'zap').trim().toLowerCase();
+  const key = (iconName || 'sparkles').trim().toLowerCase();
   const IconComp = ICON_MAP[key];
 
   if (IconComp) {
@@ -94,5 +97,5 @@ export const ServiceIcon: React.FC<ServiceIconProps> = ({
     );
   }
 
-  return <Zap size={size} style={color ? { color } : undefined} className={className} />;
+  return <Sparkles size={size} style={color ? { color } : undefined} className={className} />;
 };

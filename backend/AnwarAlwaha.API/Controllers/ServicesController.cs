@@ -24,12 +24,12 @@ public class ServicesController : ControllerBase
         return Ok(ApiResponse<List<ServiceDto>>.Ok(services));
     }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet("{idOrSlug}")]
     [ProducesResponseType(typeof(ApiResponse<ServiceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetByIdOrSlug(string idOrSlug)
     {
-        var service = await _serviceCatalog.GetServiceByIdAsync(id);
+        var service = await _serviceCatalog.GetServiceByIdOrSlugAsync(idOrSlug);
         if (service == null || !service.IsActive)
             return NotFound(ApiResponse<object>.Fail("الخدمة غير موجودة أو غير مفعلة."));
 

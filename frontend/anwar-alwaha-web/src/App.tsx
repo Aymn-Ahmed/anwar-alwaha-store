@@ -10,6 +10,7 @@ import { ToastContainer } from './components/common/ToastContainer';
 import { HomePage } from './pages/HomePage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { ServicesPage } from './pages/ServicesPage';
+import { ServiceDetailPage } from './pages/ServiceDetailPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { ReviewProductPage } from './pages/ReviewProductPage';
@@ -51,6 +52,7 @@ export const App: React.FC = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/services" element={<ServicesPage />} />
+          <Route path="/services/:serviceSlug" element={<ServiceDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/review/:productId" element={<ReviewProductPage />} />

@@ -70,6 +70,45 @@ public class ServiceCatalogService : IServiceCatalogService
         };
     }
 
+    public async Task<ServiceDto?> GetServiceByIdOrSlugAsync(string identifier)
+    {
+        if (string.IsNullOrWhiteSpace(identifier))
+            return null;
+
+        var query = _unitOfWork.Services.Query().Include(s => s.LinkedCategory).AsQueryable();
+
+        if (Guid.TryParse(identifier, out var guid))
+        {
+            var byGuid = await query.FirstOrDefaultAsync(s => s.Id == guid);
+            if (byGuid != null)
+                return MapToDto(byGuid);
+        }
+
+        var trimmed = identifier.Trim().ToLower();
+        var service = await query.FirstOrDefaultAsync(s =>
+            (s.LinkedCategoryId != null && s.LinkedCategoryId.ToLower() == trimmed) ||
+            s.Title.ToLower() == trimmed ||
+            s.Id.ToString() == trimmed);
+
+        return service != null ? MapToDto(service) : null;
+    }
+
+    private static ServiceDto MapToDto(ServiceItem service) => new ServiceDto
+    {
+        Id = service.Id,
+        Title = service.Title,
+        Description = service.Description,
+        IconName = service.IconName,
+        AccentColor = service.AccentColor,
+        MediaType = service.MediaType,
+        MediaUrl = service.MediaUrl,
+        LinkedCategoryId = service.LinkedCategoryId,
+        LinkedCategoryTitle = service.LinkedCategory?.Title,
+        WhatsAppTemplate = service.WhatsAppTemplate,
+        SortOrder = service.SortOrder,
+        IsActive = service.IsActive
+    };
+
     public async Task<ServiceDto> CreateServiceAsync(ServiceCreateUpdateDto dto)
     {
         var service = new ServiceItem
