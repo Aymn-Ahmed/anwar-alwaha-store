@@ -227,6 +227,7 @@ using (var scope = app.Services.CreateScope())
                     "ALTER TABLE categories ADD COLUMN IF NOT EXISTS \"ImageUrl\" text NULL; " +
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"CustomerLocationLat\" double precision NULL; " +
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"CustomerLocationLng\" double precision NULL; " +
+                    "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS \"RawWebhookPayload\" text NULL; " +
                     "ALTER TABLE product_reviews ADD COLUMN IF NOT EXISTS \"MediaUrls\" text[] NOT NULL DEFAULT '{}'; " +
                     "CREATE TABLE IF NOT EXISTS category_complement_rules (" +
                     "  \"Id\" uuid PRIMARY KEY, " +
