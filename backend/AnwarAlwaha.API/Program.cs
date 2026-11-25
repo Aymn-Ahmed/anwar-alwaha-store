@@ -225,6 +225,9 @@ using (var scope = app.Services.CreateScope())
                     "ALTER TABLE products ADD COLUMN IF NOT EXISTS \"ImageFetchAttempted\" boolean NOT NULL DEFAULT false; " +
                     "ALTER TABLE products ADD COLUMN IF NOT EXISTS search_keywords TEXT NULL; " +
                     "ALTER TABLE categories ADD COLUMN IF NOT EXISTS \"ImageUrl\" text NULL; " +
+                    "ALTER TABLE services ADD COLUMN IF NOT EXISTS \"DetailedOverview\" text NULL; " +
+                    "ALTER TABLE services ADD COLUMN IF NOT EXISTS \"AvailableOptionsOrSizes\" text NULL; " +
+                    "ALTER TABLE services ADD COLUMN IF NOT EXISTS \"GalleryImageUrls\" text NULL; " +
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"CustomerLocationLat\" double precision NULL; " +
                     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS \"CustomerLocationLng\" double precision NULL; " +
                     "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS \"RawWebhookPayload\" text NULL; " +

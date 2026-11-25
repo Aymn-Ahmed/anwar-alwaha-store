@@ -99,6 +99,9 @@ export interface ServiceCreateUpdate {
   mediaUrl?: string;
   linkedCategoryId?: string;
   whatsAppTemplate?: string;
+  detailedOverview?: string;
+  availableOptionsOrSizes?: string;
+  galleryImageUrls?: string;
   sortOrder: number;
   isActive: boolean;
 }

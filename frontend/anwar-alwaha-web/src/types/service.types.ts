@@ -9,6 +9,9 @@ export interface ServiceItem {
   linkedCategoryId?: string;
   linkedCategoryTitle?: string;
   whatsAppTemplate?: string;
+  detailedOverview?: string;
+  availableOptionsOrSizes?: string;
+  galleryImageUrls?: string;
   sortOrder: number;
   isActive: boolean;
 }

@@ -11,6 +11,9 @@ public class ServiceItem : BaseEntity
     public string? MediaUrl { get; set; }
     public string? LinkedCategoryId { get; set; }
     public string? WhatsAppTemplate { get; set; }
+    public string? DetailedOverview { get; set; }
+    public string? AvailableOptionsOrSizes { get; set; }
+    public string? GalleryImageUrls { get; set; }
     public int SortOrder { get; set; } = 0;
     public bool IsActive { get; set; } = true;
 

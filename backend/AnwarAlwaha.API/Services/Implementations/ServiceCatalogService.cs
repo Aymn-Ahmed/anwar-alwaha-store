@@ -38,6 +38,9 @@ public class ServiceCatalogService : IServiceCatalogService
                 LinkedCategoryId = s.LinkedCategoryId,
                 LinkedCategoryTitle = s.LinkedCategory != null ? s.LinkedCategory.Title : null,
                 WhatsAppTemplate = s.WhatsAppTemplate,
+                DetailedOverview = s.DetailedOverview,
+                AvailableOptionsOrSizes = s.AvailableOptionsOrSizes,
+                GalleryImageUrls = s.GalleryImageUrls,
                 SortOrder = s.SortOrder,
                 IsActive = s.IsActive
             })
@@ -65,6 +68,9 @@ public class ServiceCatalogService : IServiceCatalogService
             LinkedCategoryId = service.LinkedCategoryId,
             LinkedCategoryTitle = service.LinkedCategory?.Title,
             WhatsAppTemplate = service.WhatsAppTemplate,
+            DetailedOverview = service.DetailedOverview,
+            AvailableOptionsOrSizes = service.AvailableOptionsOrSizes,
+            GalleryImageUrls = service.GalleryImageUrls,
             SortOrder = service.SortOrder,
             IsActive = service.IsActive
         };
@@ -105,6 +111,9 @@ public class ServiceCatalogService : IServiceCatalogService
         LinkedCategoryId = service.LinkedCategoryId,
         LinkedCategoryTitle = service.LinkedCategory?.Title,
         WhatsAppTemplate = service.WhatsAppTemplate,
+        DetailedOverview = service.DetailedOverview,
+        AvailableOptionsOrSizes = service.AvailableOptionsOrSizes,
+        GalleryImageUrls = service.GalleryImageUrls,
         SortOrder = service.SortOrder,
         IsActive = service.IsActive
     };
@@ -122,6 +131,9 @@ public class ServiceCatalogService : IServiceCatalogService
             MediaUrl = dto.MediaUrl?.Trim(),
             LinkedCategoryId = dto.LinkedCategoryId,
             WhatsAppTemplate = dto.WhatsAppTemplate?.Trim(),
+            DetailedOverview = dto.DetailedOverview?.Trim(),
+            AvailableOptionsOrSizes = dto.AvailableOptionsOrSizes?.Trim(),
+            GalleryImageUrls = dto.GalleryImageUrls?.Trim(),
             SortOrder = dto.SortOrder,
             IsActive = dto.IsActive
         };
@@ -140,6 +152,9 @@ public class ServiceCatalogService : IServiceCatalogService
             MediaUrl = service.MediaUrl,
             LinkedCategoryId = service.LinkedCategoryId,
             WhatsAppTemplate = service.WhatsAppTemplate,
+            DetailedOverview = service.DetailedOverview,
+            AvailableOptionsOrSizes = service.AvailableOptionsOrSizes,
+            GalleryImageUrls = service.GalleryImageUrls,
             SortOrder = service.SortOrder,
             IsActive = service.IsActive
         };
@@ -159,6 +174,9 @@ public class ServiceCatalogService : IServiceCatalogService
         service.MediaUrl = dto.MediaUrl?.Trim();
         service.LinkedCategoryId = dto.LinkedCategoryId;
         service.WhatsAppTemplate = dto.WhatsAppTemplate?.Trim();
+        service.DetailedOverview = dto.DetailedOverview?.Trim();
+        service.AvailableOptionsOrSizes = dto.AvailableOptionsOrSizes?.Trim();
+        service.GalleryImageUrls = dto.GalleryImageUrls?.Trim();
         service.SortOrder = dto.SortOrder;
         service.IsActive = dto.IsActive;
 
@@ -176,6 +194,9 @@ public class ServiceCatalogService : IServiceCatalogService
             MediaUrl = service.MediaUrl,
             LinkedCategoryId = service.LinkedCategoryId,
             WhatsAppTemplate = service.WhatsAppTemplate,
+            DetailedOverview = service.DetailedOverview,
+            AvailableOptionsOrSizes = service.AvailableOptionsOrSizes,
+            GalleryImageUrls = service.GalleryImageUrls,
             SortOrder = service.SortOrder,
             IsActive = service.IsActive
         };

@@ -45,6 +45,9 @@ export const AdminServicesPage: React.FC = () => {
     mediaUrl: '',
     linkedCategoryId: '',
     whatsAppTemplate: '',
+    detailedOverview: '',
+    availableOptionsOrSizes: '',
+    galleryImageUrls: '',
     sortOrder: 0,
     isActive: true,
   });
@@ -82,6 +85,9 @@ export const AdminServicesPage: React.FC = () => {
       mediaUrl: '',
       linkedCategoryId: '',
       whatsAppTemplate: '',
+      detailedOverview: '',
+      availableOptionsOrSizes: '',
+      galleryImageUrls: '',
       sortOrder: services.length + 1,
       isActive: true,
     });
@@ -99,6 +105,9 @@ export const AdminServicesPage: React.FC = () => {
       mediaUrl: srv.mediaUrl || '',
       linkedCategoryId: srv.linkedCategoryId || '',
       whatsAppTemplate: srv.whatsAppTemplate || '',
+      detailedOverview: srv.detailedOverview || '',
+      availableOptionsOrSizes: srv.availableOptionsOrSizes || '',
+      galleryImageUrls: srv.galleryImageUrls || '',
       sortOrder: srv.sortOrder,
       isActive: srv.isActive,
     });
@@ -445,6 +454,42 @@ export const AdminServicesPage: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, whatsAppTemplate: e.target.value })}
                     placeholder="مرحباً، أود طلب خدمة..."
                     className="w-full bg-gray-800 border border-gray-700 text-white p-2.5 rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-gray-300 font-bold">خيارات أو مقاسات سريعة (مفصولة بفاصلة أو سطر جديد)</label>
+                  <textarea
+                    rows={2}
+                    value={formData.availableOptionsOrSizes || ''}
+                    onChange={(e) => setFormData({ ...formData, availableOptionsOrSizes: e.target.value })}
+                    placeholder="مثال: مقاس 85×200 سم، استكر لامع، استكر مطفي، وجه واحد، وجهين"
+                    className="w-full bg-gray-800 border border-gray-700 text-white p-2.5 rounded-xl text-xs"
+                  />
+                  <p className="text-[11px] text-gray-500">
+                    تظهر كأزرار خيارات سريعة وتفاعلية بلمسة واحدة في واجهة الخدمات وتفاصيل الطلب.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-gray-300 font-bold">شرح تفصيلي ومواصفات إضافية (اختياري)</label>
+                  <textarea
+                    rows={3}
+                    value={formData.detailedOverview || ''}
+                    onChange={(e) => setFormData({ ...formData, detailedOverview: e.target.value })}
+                    placeholder="مواصفات المواد، مدة التنفيذ والتسليم، ملاحظات التصميم والطباعة..."
+                    className="w-full bg-gray-800 border border-gray-700 text-white p-2.5 rounded-xl text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-gray-300 font-bold">روابط صور معرض الأعمال (مفصولة بفواصل أو أسطر)</label>
+                  <textarea
+                    rows={2}
+                    value={formData.galleryImageUrls || ''}
+                    onChange={(e) => setFormData({ ...formData, galleryImageUrls: e.target.value })}
+                    placeholder="https://.../img1.jpg, https://.../img2.jpg"
+                    className="w-full bg-gray-800 border border-gray-700 text-white p-2.5 rounded-xl text-xs font-mono"
                   />
                 </div>
 

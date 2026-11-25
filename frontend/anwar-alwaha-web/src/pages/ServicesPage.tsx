@@ -1,10 +1,177 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, MessageCircle, ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { X, MessageCircle, ArrowLeft, ArrowUpRight, Check, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { servicesApi } from '../api/servicesApi';
 import { ServiceItem } from '../types/service.types';
 import { ServiceIcon } from '../components/common/ServiceIcon';
 import { UniversalMediaEmbedder } from '../components/common/UniversalMediaEmbedder';
+
+interface ServiceSubOption {
+  id: string;
+  title: string;
+  tag?: string;
+  badge?: string;
+  imageUrl?: string;
+}
+
+// Curated default sub-options matching real store offerings for each department
+const DEFAULT_DEPARTMENT_OFFERINGS: Record<string, ServiceSubOption[]> = {
+  dept_print: [
+    {
+      id: 'print_rollup',
+      title: 'رول أب ستاند (85×200 سم)',
+      tag: 'مواصفات فاخرة',
+      badge: 'الأكثر طلباً',
+      imageUrl: 'https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'print_banners',
+      title: 'بنرات إعلانية وتجارية ومدرسية',
+      tag: 'مقاوم للرطوبة والشمس',
+      badge: 'مكائن عريضة',
+      imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'print_stickers',
+      title: 'قص استكرات إلكتروني (Plotter)',
+      tag: 'قص دقيق ليزري',
+      badge: 'لاصق ألماني',
+      imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'print_boards',
+      title: 'لوحات فلين وفوركس وباركود QR',
+      tag: 'سماكات متعددة',
+      imageUrl: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=600&q=80',
+    },
+  ],
+  dept_school: [
+    {
+      id: 'school_boards',
+      title: 'لوحات الفصول والقوانين الصفية',
+      tag: 'تصميم تربوي مميز',
+      badge: 'جاهز للتركيب',
+      imageUrl: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'school_booths',
+      title: 'مجسمات المتاجر والأكشاك (3D Booths)',
+      tag: 'أبعاد ومجسمات واقعية',
+      badge: 'فلين مقوى',
+      imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'school_models',
+      title: 'مجسمات ومطويات الأنشطة المدرسية',
+      tag: 'إبداع فني متقن',
+      imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'school_portfolios',
+      title: 'ملفات إنجاز المعلمين والطلاب',
+      tag: 'تجليد وطباعة ليزرية',
+      imageUrl: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80',
+    },
+  ],
+  dept_art: [
+    {
+      id: 'art_murals',
+      title: 'جداريات المدارس والأسوار الخارجية',
+      tag: 'رسم ميداني احترافي',
+      badge: 'ألوان ثابتة',
+      imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'art_calligraphy',
+      title: 'لوحات الخط العربي الأصيل والتكريم',
+      tag: 'حبر وأصالة يدوية',
+      badge: 'خطاطون محترفون',
+      imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'art_tracks',
+      title: 'رسم مسارات الألعاب الحركية للروضات',
+      tag: 'ألعاب أرضية تفاعلية',
+      imageUrl: 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&w=600&q=80',
+    },
+  ],
+  dept_themes: [
+    {
+      id: 'themes_sleeves',
+      title: 'أكمام أكواب القهوة (Cup Sleeves)',
+      tag: 'طباعة حرارية وفاخرة',
+      badge: 'للمقاهي والفعاليات',
+      imageUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'themes_occasions',
+      title: 'ثيمات المواليد والأعراس والمناسبات',
+      tag: 'تنسيق متكامل للألوان',
+      badge: 'تصميم خاص',
+      imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'themes_water',
+      title: 'تغليف وتاقات علب المياه والعصائر',
+      tag: 'قص احترافي بأسماء المناسبة',
+      imageUrl: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'themes_letters',
+      title: 'توزيعات تفعيل الحروف المدرسية للأطفال',
+      tag: 'مجسمات وهدايا محبوبة',
+      imageUrl: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=600&q=80',
+    },
+  ],
+  dept_grad: [
+    {
+      id: 'grad_binding',
+      title: 'تجليد جلد مقوى مذهب (بكالوريوس)',
+      tag: 'حفر ذهبي حراري',
+      badge: 'مواصفات فاخرة',
+      imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'grad_master',
+      title: 'تجليد ملكي مع بوستر A1 (ماجستير)',
+      tag: 'تجليد جلدي وبوستر ملون',
+      imageUrl: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777a?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'grad_phd',
+      title: 'تجليد دكتوراه فاخر مع درع تذكاري',
+      tag: 'طقم التخرج الأكاديمي الشامل',
+      imageUrl: 'https://images.unsplash.com/photo-1576267423445-b2e0074d68a4?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'grad_sash',
+      title: 'روب ووشاح تخرج بتطريز الاسم',
+      tag: 'قماش ملكي وتطريز كمبيوتري',
+      imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=600&q=80',
+    },
+  ],
+  dept_stationery: [
+    {
+      id: 'stat_laser',
+      title: 'تصوير وتجليد المذكرات والبحوث ليزرياً',
+      tag: 'دقة عالية وسرعة تسليم',
+      badge: 'أبيض وأسود وملون',
+      imageUrl: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'stat_supplies',
+      title: 'حقائب ودفاتر وأدوات مدرسية متكاملة',
+      tag: 'أفضل الماركات المعتمدة',
+      imageUrl: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'stat_art',
+      title: 'ألوان فنية وأقمشة كانفس وفرش رسم',
+      tag: 'للهواة والمحترفين',
+      imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=600&q=80',
+    },
+  ],
+};
 
 // Official store services fallback (identical to DbInitializer seed data)
 const OFFICIAL_STORE_SERVICES: ServiceItem[] = [
@@ -105,9 +272,7 @@ export const ServicesPage: React.FC = () => {
   const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_STORE_SERVICES);
   const [loading, setLoading] = useState(true);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-  const [columnsCount, setColumnsCount] = useState<2 | 3>(() =>
-    typeof window !== 'undefined' && window.innerWidth < 768 ? 2 : 3
-  );
+  const [selectedOptionTitle, setSelectedOptionTitle] = useState<string>('');
 
   const previewRef = useRef<HTMLDivElement | null>(null);
 
@@ -128,16 +293,6 @@ export const ServicesPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Track responsive columns (< 768px => 2 columns, >= 768px => 3 columns)
-  useEffect(() => {
-    const updateCols = () => {
-      setColumnsCount(window.innerWidth < 768 ? 2 : 3);
-    };
-    updateCols();
-    window.addEventListener('resize', updateCols);
-    return () => window.removeEventListener('resize', updateCols);
-  }, []);
-
   // Smooth scroll when preview drawer opens
   useEffect(() => {
     if (selectedServiceId && previewRef.current) {
@@ -145,7 +300,10 @@ export const ServicesPage: React.FC = () => {
     }
   }, [selectedServiceId]);
 
-  // Slice services into dynamic rows of `columnsCount`
+  // Keep 3 columns grid matching user screenshots
+  const columnsCount = 3;
+
+  // Slice services into 3-column rows
   const serviceRows = useMemo(() => {
     const rows: ServiceItem[][] = [];
     for (let i = 0; i < services.length; i += columnsCount) {
@@ -154,68 +312,119 @@ export const ServicesPage: React.FC = () => {
     return rows;
   }, [services, columnsCount]);
 
-  const openWhatsApp = (service: ServiceItem) => {
-    const text =
+  // Active selected service
+  const activeService = useMemo(() => {
+    return services.find((s) => s.id === selectedServiceId) || null;
+  }, [services, selectedServiceId]);
+
+  // Get options for active service
+  const activeOptions = useMemo((): ServiceSubOption[] => {
+    if (!activeService) return [];
+
+    // 1. If admin provided AvailableOptionsOrSizes in database, parse it
+    if (activeService.availableOptionsOrSizes?.trim()) {
+      const parsed = activeService.availableOptionsOrSizes
+        .split(/[,\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (parsed.length > 0) {
+        return parsed.map((item, idx) => ({
+          id: `opt_${idx}`,
+          title: item,
+          tag: 'خيار متاح',
+          imageUrl:
+            activeService.mediaType === 'image' && activeService.mediaUrl
+              ? activeService.mediaUrl
+              : undefined,
+        }));
+      }
+    }
+
+    // 2. Fallback to curated default offerings for this department
+    const key = activeService.linkedCategoryId || activeService.id;
+    if (DEFAULT_DEPARTMENT_OFFERINGS[key]) {
+      return DEFAULT_DEPARTMENT_OFFERINGS[key];
+    }
+
+    // 3. Generic fallback
+    return [
+      { id: '1', title: activeService.title, tag: 'خدمة أساسية' },
+      { id: '2', title: 'طلب مخصص بمواصفات خاصة', tag: 'تنفيذ فوري' },
+    ];
+  }, [activeService]);
+
+  // Automatically select the first option when active service changes
+  useEffect(() => {
+    if (activeOptions.length > 0) {
+      setSelectedOptionTitle(activeOptions[0].title);
+    } else {
+      setSelectedOptionTitle('');
+    }
+  }, [activeOptions]);
+
+  const openWhatsApp = (service: ServiceItem, option?: string) => {
+    let text =
       service.whatsAppTemplate ||
-      `مرحباً مكتبة أنوار الواحة 👋 أود الاستفسار وطلب خدمة: ${service.title}`;
+      `مرحباً مكتبة أنوار الواحة 👋 أود الاستفسار وطلب خدمة: *${service.title}*`;
+    if (option) {
+      text += `\n🎯 الخيار المحدد: *${option}*`;
+    }
     window.open(`https://wa.me/966572350050?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   // Compute RTL horizontal position (`right` %) for upward pointer arrow
-  const getArrowRightPercent = (colIndex: number, cols: 2 | 3): string => {
-    const pct = ((colIndex + 0.5) / cols) * 100;
+  const getArrowRightPercent = (colIndex: number): string => {
+    const pct = ((colIndex + 0.5) / 3) * 100;
     return `${pct.toFixed(2)}%`;
   };
 
   const handleNavigateToServiceDetail = (service: ServiceItem) => {
     const slug = service.linkedCategoryId || service.id;
-    navigate(`/services/${encodeURIComponent(slug)}`);
+    const query = selectedOptionTitle ? `?option=${encodeURIComponent(selectedOptionTitle)}` : '';
+    navigate(`/services/${encodeURIComponent(slug)}${query}`);
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pt-6 sm:pt-10 pb-28 lg:pb-16 px-4">
-      <div className="max-w-4xl mx-auto space-y-7">
-        {/* Top Header Badge & Headline (with explicit top padding to avoid mobile clipping) */}
-        <div className="text-center space-y-3 pt-2 sm:pt-4">
-          <div className="inline-flex items-center gap-1.5 bg-black text-white text-xs font-black px-4 py-1.5 rounded-full shadow-xs">
+    <div className="min-h-screen bg-[#f8fafc] pt-5 sm:pt-8 pb-28 lg:pb-16 px-3 sm:px-4">
+      <div className="max-w-xl mx-auto space-y-5">
+        {/* Top Header Badge & Headline (Exact UI from user screenshots) */}
+        <div className="text-center space-y-2 pt-2">
+          <div className="inline-flex items-center gap-1.5 bg-black text-white text-[11px] sm:text-xs font-black px-4 py-1.5 rounded-full shadow-xs">
             <span className="text-[#F59E0B]">⚡</span>
             <span>خدمات وأقسام مكتبة أنوار الواحة</span>
           </div>
-          <h1 className="text-xl sm:text-3xl font-black text-zinc-900 tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-zinc-900 tracking-tight">
             اضغط على الخدمة لمعاينة تفاصيلها
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-500 max-w-md mx-auto">
-            تصفح خدماتنا الميدانية والطباعية واطلب تنفيذ طلبك مباشرة أو استعرض التفاصيل الكاملة للقسم
+          <p className="text-[11px] sm:text-xs text-zinc-500 max-w-sm mx-auto">
+            تصفح خدماتنا واضغط لمعاينة الخيارات ونماذج الأعمال وطلب الخدمة بلمسة واحدة
           </p>
         </div>
 
-        {/* Tactile Modern 2-Column (Mobile) / 3-Column (Desktop) Grid */}
+        {/* 3-Column Circular Services Grid (Matching Screenshot Layout) */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="bg-white rounded-2xl border border-zinc-200 p-5 flex flex-col items-center gap-3 animate-pulse"
+                className="bg-white rounded-2xl border border-zinc-200 p-4 flex flex-col items-center gap-2 animate-pulse"
               >
-                <div className="w-16 h-16 rounded-full bg-zinc-200" />
-                <div className="w-24 h-3 bg-zinc-200 rounded" />
+                <div className="w-14 h-14 rounded-full bg-zinc-200" />
+                <div className="w-16 h-2.5 bg-zinc-200 rounded" />
               </div>
             ))}
           </div>
         ) : (
-          <div className="space-y-5 max-w-3xl mx-auto">
+          <div className="space-y-4">
             {serviceRows.map((row, rowIdx) => {
               const activeColIndex = row.findIndex((s) => s.id === selectedServiceId);
               const activeServiceInRow = activeColIndex !== -1 ? row[activeColIndex] : null;
 
               return (
-                <div key={rowIdx} className="space-y-4">
-                  {/* Grid Row */}
-                  <div
-                    className={`grid gap-3 sm:gap-4 ${
-                      columnsCount === 2 ? 'grid-cols-2' : 'grid-cols-3'
-                    }`}
-                  >
+                <div key={rowIdx} className="space-y-3">
+                  {/* Grid of 3 Circular Services */}
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {row.map((service) => {
                       const isSelected = selectedServiceId === service.id;
                       const color = service.accentColor || '#0284c7';
@@ -228,16 +437,16 @@ export const ServicesPage: React.FC = () => {
                               prev === service.id ? null : service.id
                             )
                           }
-                          className={`bg-white rounded-2xl border transition-all cursor-pointer p-4 sm:p-5 flex flex-col items-center text-center gap-3 relative select-none ${
+                          className={`bg-white rounded-2xl border transition-all cursor-pointer p-3 sm:p-4 flex flex-col items-center text-center gap-2 relative select-none ${
                             isSelected
-                              ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md bg-emerald-50/10'
+                              ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md bg-emerald-50/15'
                               : 'border-zinc-200/90 shadow-xs hover:border-emerald-400 hover:shadow-sm'
                           }`}
                         >
                           {/* Circular Container with Colored Bottom Arc */}
                           <div className="relative">
                             <div
-                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 relative"
+                              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-transform hover:scale-105 relative"
                               style={{
                                 backgroundColor: isSelected ? `${color}18` : `${color}0c`,
                                 boxShadow: isSelected ? `0 0 0 2px ${color}` : undefined,
@@ -266,25 +475,25 @@ export const ServicesPage: React.FC = () => {
                                 />
                               </svg>
 
-                              {/* Centered Clean Contextual Icon (No Zap duplicate) */}
+                              {/* Centered Clean Contextual Icon */}
                               <div className="relative z-10">
                                 <ServiceIcon
                                   iconName={service.iconName}
-                                  size={28}
+                                  size={24}
                                   color={color}
                                 />
                               </div>
                             </div>
 
-                            {/* Active Red Indicator Dot on Top-Right */}
+                            {/* Active Red Indicator Dot on Top-Right (as shown in user screenshot) */}
                             {isSelected && (
-                              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#FA2C19] border-2 border-white shadow-xs animate-in zoom-in" />
+                              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#FA2C19] border-2 border-white shadow-xs animate-in zoom-in" />
                             )}
                           </div>
 
                           {/* Service Title */}
                           <h3
-                            className={`text-xs sm:text-sm font-black line-clamp-2 leading-snug transition-colors ${
+                            className={`text-[11px] sm:text-xs font-black line-clamp-2 leading-tight transition-colors ${
                               isSelected ? 'text-emerald-700' : 'text-zinc-900'
                             }`}
                           >
@@ -295,30 +504,30 @@ export const ServicesPage: React.FC = () => {
                     })}
                   </div>
 
-                  {/* ===== IN-PLACE EXPANDABLE DRAWER CARD ===== */}
+                  {/* ===== IN-PLACE EXPANDABLE DRAWER CARD (Directly below active row) ===== */}
                   {activeServiceInRow && (
                     <div
                       ref={previewRef}
-                      className="relative w-full bg-white rounded-3xl border border-zinc-200/90 shadow-xl p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200"
+                      className="relative w-full bg-white rounded-3xl border border-zinc-200/90 shadow-xl p-4 sm:p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200"
                     >
                       {/* Upward Pointer Caret aligned directly to clicked card in RTL */}
                       <div
                         className="absolute -top-2 w-4 h-4 bg-white border-t border-l border-zinc-200 rotate-45 translate-x-1/2 transition-all duration-300 z-10"
                         style={{
-                          right: getArrowRightPercent(activeColIndex, columnsCount),
+                          right: getArrowRightPercent(activeColIndex),
                         }}
                       />
 
-                      {/* Header: Title with dot + Close Button */}
-                      <div className="flex items-center justify-between gap-3 border-b border-zinc-100 pb-3">
+                      {/* Header: Title with dot + Close Button (Matches Screenshot) */}
+                      <div className="flex items-center justify-between gap-3 border-b border-zinc-100 pb-2.5">
                         <div className="flex items-center gap-2 min-w-0">
                           <span
                             className="w-2.5 h-2.5 rounded-full shrink-0"
                             style={{
-                              backgroundColor: activeServiceInRow.accentColor || '#0284c7',
+                              backgroundColor: activeServiceInRow.accentColor || '#059669',
                             }}
                           />
-                          <h2 className="text-sm sm:text-base font-black text-zinc-900 truncate">
+                          <h2 className="text-xs sm:text-sm font-black text-zinc-900 truncate">
                             {activeServiceInRow.title}
                           </h2>
                         </div>
@@ -326,16 +535,89 @@ export const ServicesPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSelectedServiceId(null)}
-                          className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                          className="w-7 h-7 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                           title="إغلاق المعاينة"
                         >
-                          <X size={16} />
+                          <X size={15} />
                         </button>
                       </div>
 
-                      {/* Real Media Showcase from Database */}
+                      {/* Horizontal Carousel of Available Services in this Department */}
+                      {activeOptions.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-[11px] text-zinc-500 font-bold px-0.5">
+                            <span>الخدمات المتاحة في هذا القسم:</span>
+                            <span className="text-[10px] text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">
+                              اسحب للتصفح ←
+                            </span>
+                          </div>
+
+                          <div className="flex items-stretch gap-2.5 overflow-x-auto pb-1.5 pt-0.5 scrollbar-none snap-x">
+                            {activeOptions.map((opt) => {
+                              const isCurrentSelected = selectedOptionTitle === opt.title;
+
+                              return (
+                                <div
+                                  key={opt.id}
+                                  onClick={() => setSelectedOptionTitle(opt.title)}
+                                  className={`shrink-0 w-44 sm:w-52 rounded-2xl overflow-hidden border cursor-pointer transition-all snap-start flex flex-col justify-between ${
+                                    isCurrentSelected
+                                      ? 'border-emerald-500 ring-2 ring-emerald-500/30 shadow-md bg-white'
+                                      : 'border-zinc-200 bg-zinc-50/60 hover:border-zinc-300'
+                                  }`}
+                                >
+                                  {/* Media Image / Visual Container */}
+                                  <div className="relative h-24 sm:h-28 bg-zinc-100 overflow-hidden">
+                                    {opt.imageUrl ? (
+                                      <img
+                                        src={opt.imageUrl}
+                                        alt={opt.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-400">
+                                        <ServiceIcon
+                                          iconName={activeServiceInRow.iconName}
+                                          size={32}
+                                          color={activeServiceInRow.accentColor || '#059669'}
+                                        />
+                                      </div>
+                                    )}
+
+                                    {/* Top-Right Tag Badge */}
+                                    {opt.tag && (
+                                      <span className="absolute top-2 right-2 bg-black/75 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
+                                        {opt.tag}
+                                      </span>
+                                    )}
+
+                                    {/* Top-Left 'Selected' Pill Badge */}
+                                    {isCurrentSelected && (
+                                      <span className="absolute top-2 left-2 bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
+                                        <Check size={10} strokeWidth={3} />
+                                        <span>محدد</span>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Bottom Title Bar */}
+                                  <div className="p-2 sm:p-2.5">
+                                    <h4 className="text-[11px] sm:text-xs font-black text-zinc-900 line-clamp-1 leading-snug">
+                                      {opt.title}
+                                    </h4>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Video Embedder (if active service has TikTok/Video and no carousel cards) */}
                       {activeServiceInRow.mediaType !== 'none' &&
-                        activeServiceInRow.mediaUrl && (
+                        activeServiceInRow.mediaUrl &&
+                        activeOptions.length === 0 && (
                           <div className="rounded-2xl overflow-hidden border border-zinc-100 shadow-xs">
                             <UniversalMediaEmbedder
                               mediaType={activeServiceInRow.mediaType}
@@ -345,33 +627,75 @@ export const ServicesPage: React.FC = () => {
                           </div>
                         )}
 
-                      {/* Real Service Description from Database */}
+                      {/* Quick Pill Selection (حدد نوع طلبك بلمسة واحدة) */}
+                      {activeOptions.length > 0 && (
+                        <div className="space-y-2 pt-1">
+                          <div className="flex items-center justify-between text-xs font-bold text-zinc-800">
+                            <span>حدد نوع طلبك بلمسة واحدة:</span>
+                            {selectedOptionTitle && (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-black">
+                                <Check size={10} />
+                                <span>تم التحديد</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap gap-1.5">
+                            {activeOptions.map((opt) => {
+                              const isCurrent = selectedOptionTitle === opt.title;
+
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() => setSelectedOptionTitle(opt.title)}
+                                  className={`text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    isCurrent
+                                      ? 'bg-black text-white border-black shadow-xs font-black'
+                                      : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
+                                  }`}
+                                >
+                                  {isCurrent && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                                  )}
+                                  <span>{opt.title}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Database Description */}
                       {activeServiceInRow.description && (
-                        <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed bg-zinc-50 p-4 rounded-2xl border border-zinc-100">
+                        <p className="text-[11px] sm:text-xs text-zinc-600 leading-relaxed bg-zinc-50 p-3 rounded-xl border border-zinc-100">
                           {activeServiceInRow.description}
                         </p>
                       )}
 
-                      {/* Action Row: Dedicated Service Details View + WhatsApp */}
-                      <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+                      {/* Actions Row: Full-width Emerald Button 'المزيد ←' + WhatsApp */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
                         {/* Primary Button: Navigate directly to /services/:serviceSlug */}
                         <button
                           type="button"
                           onClick={() => handleNavigateToServiceDetail(activeServiceInRow)}
-                          className="w-full sm:flex-1 bg-zinc-900 hover:bg-black text-white font-black text-xs sm:text-sm py-3.5 px-5 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer active:scale-[0.99]"
+                          className="flex-1 bg-[#059669] hover:bg-[#047857] text-white font-black text-xs sm:text-sm py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-700/20 active:scale-[0.99] cursor-pointer"
                         >
                           <span>المزيد وتفاصيل الخدمة</span>
                           <ArrowLeft size={15} />
                         </button>
 
-                        {/* WhatsApp Fast Order Button */}
+                        {/* Fast WhatsApp CTA */}
                         <button
                           type="button"
-                          onClick={() => openWhatsApp(activeServiceInRow)}
-                          className="w-full sm:w-auto bg-[#25D366] hover:bg-[#1ebe5d] text-white font-black text-xs sm:text-sm py-3.5 px-5 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-md shadow-green-500/20 active:scale-[0.99] cursor-pointer"
+                          onClick={() =>
+                            openWhatsApp(activeServiceInRow, selectedOptionTitle)
+                          }
+                          className="bg-[#25D366] hover:bg-[#1ebe5d] text-white font-black text-xs sm:text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-xs active:scale-[0.99] cursor-pointer"
+                          title="طلب سريع عبر واتساب"
                         >
-                          <MessageCircle size={17} />
-                          <span>طلب عبر واتساب ⚡</span>
+                          <MessageCircle size={16} />
+                          <span>طلب سريع</span>
                         </button>
                       </div>
                     </div>

@@ -715,10 +715,10 @@ export const StoreQrPosterModal: React.FC<StoreQrPosterModalProps> = ({
                   onClick={handleDownloadPoster}
                   disabled={isExporting}
                   style={{ backgroundColor: '#09090b', color: '#ffffff' }}
-                  className="btn-dark-export flex-1 px-4 py-3 rounded-2xl bg-zinc-950 hover:bg-black text-white keep-white font-black text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+                  className="btn-dark-export flex-1 px-4 py-3 rounded-2xl bg-zinc-950 hover:bg-black !text-white keep-white font-black text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <Download size={15} style={{ color: '#ffffff' }} />
-                  <span className="keep-white" style={{ color: '#ffffff' }}>
+                  <Download size={15} className="!text-white" style={{ color: '#ffffff' }} />
+                  <span className="keep-white !text-white font-black" style={{ color: '#ffffff' }}>
                     {isExporting ? 'جاري التصدير...' : 'تحميل البوستر كصورة (PNG)'}
                   </span>
                 </button>
