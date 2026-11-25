@@ -7,6 +7,7 @@ import { Category } from '../types/category.types';
 import { Product } from '../types/product.types';
 import { ProductCard } from '../components/products/ProductCard';
 import { ProductModal } from '../components/products/ProductModal';
+import { ServicesShowcase } from '../components/services/ServicesShowcase';
 
 // --- Hero slides (from backup design) ---
 const HERO_SLIDES = [
@@ -327,6 +328,16 @@ export const HomePage: React.FC = () => {
 
       {/* Divider */}
       <div className="h-2 bg-[#f7f7f8]" />
+
+      {/* ===== FEATURED ACADEMIC & PROFESSIONAL SERVICES SHOWCASE ===== */}
+      {!selectedCategory && !searchQuery.trim() && (
+        <>
+          <section className="bg-[#f8fafc] py-4 sm:py-6 border-b border-[#ebebeb]">
+            <ServicesShowcase showTitle={true} />
+          </section>
+          <div className="h-2 bg-[#f7f7f8]" />
+        </>
+      )}
 
       {/* ===== PRODUCTS SECTION ===== */}
       <section className="bg-white px-4 pt-4 pb-6">
