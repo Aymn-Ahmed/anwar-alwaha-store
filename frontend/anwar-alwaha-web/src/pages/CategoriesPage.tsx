@@ -1,6 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, ChevronRight, ChevronLeft, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
+import {
+  SlidersHorizontal,
+  ChevronRight,
+  ChevronLeft,
+  Search,
+  ArrowRight,
+  Grid,
+  ShoppingBag,
+  Sparkles,
+} from 'lucide-react';
 import { categoriesApi } from '../api/categoriesApi';
 import { productsApi } from '../api/productsApi';
 import { Category } from '../types/category.types';
@@ -10,6 +19,9 @@ import { ProductModal } from '../components/products/ProductModal';
 
 export const CategoriesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { categoryId: routeCatId } = useParams<{ categoryId?: string }>();
+  const navigate = useNavigate();
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -18,14 +30,14 @@ export const CategoriesPage: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [localSearch, setLocalSearch] = useState(searchParams.get('search') || '');
 
-  const productsSectionRef = useRef<HTMLDivElement | null>(null);
-
-  const selectedCategory = searchParams.get('cat') || '';
+  // Category selection can come from URL path (/categories/:categoryId) or query (?cat=id)
+  const selectedCategory = routeCatId || searchParams.get('cat') || '';
   const searchQuery = searchParams.get('search') || '';
   const sortBy = (searchParams.get('sort') || 'newest') as any;
   const page = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = 20;
 
+  // 1. Fetch all store categories
   useEffect(() => {
     setCategoriesLoading(true);
     categoriesApi
@@ -35,6 +47,7 @@ export const CategoriesPage: React.FC = () => {
       .finally(() => setCategoriesLoading(false));
   }, []);
 
+  // 2. Fetch products whenever category, search, sort, or page changes
   useEffect(() => {
     let isMounted = true;
     setProductsLoading(true);
@@ -67,7 +80,8 @@ export const CategoriesPage: React.FC = () => {
     };
   }, [selectedCategory, searchQuery, sortBy, page]);
 
-  const updateParam = (key: string, value: string, scrollToProducts = false) => {
+  // Update URL search parameters
+  const updateParam = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
     if (value) {
       next.set(key, value);
@@ -76,17 +90,37 @@ export const CategoriesPage: React.FC = () => {
     }
     next.set('page', '1');
     setSearchParams(next);
-
-    if (scrollToProducts && productsSectionRef.current) {
-      setTimeout(() => {
-        productsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
-    }
   };
 
-  const clearFilters = () => {
+  // Switch category directly with NO awkward scroll jumps
+  const handleSelectCategory = (catId: string) => {
     setLocalSearch('');
-    setSearchParams(new URLSearchParams());
+    if (routeCatId) {
+      if (catId) {
+        navigate(`/categories/${encodeURIComponent(catId)}`);
+      } else {
+        navigate('/categories');
+      }
+    } else {
+      updateParam('cat', catId);
+    }
+    // Scroll to top of viewport cleanly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Return to all categories overview
+  const handleBackToAllCategories = () => {
+    setLocalSearch('');
+    if (routeCatId) {
+      navigate('/categories');
+    } else {
+      const next = new URLSearchParams(searchParams);
+      next.delete('cat');
+      next.delete('search');
+      next.set('page', '1');
+      setSearchParams(next);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -96,50 +130,49 @@ export const CategoriesPage: React.FC = () => {
 
   const activeCategoryObj = categories.find((c) => c.id === selectedCategory);
   const totalPages = Math.ceil(totalCount / pageSize);
+  const isFocusedCategoryView = Boolean(selectedCategory);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 pb-24 lg:pb-12 space-y-8">
-      {/* ===== 1. ALL CATEGORIES 3-COLUMN GRID ===== */}
-      <section className="bg-white rounded-3xl border border-[#ebebeb] p-5 sm:p-8 shadow-sm space-y-6">
-        <div className="flex items-start justify-between gap-4 border-b border-zinc-100 pb-4">
-          <div>
-            <h1 className="text-lg sm:text-2xl font-black text-zinc-900 flex items-center gap-2">
-              <span>📂</span>
-              <span>جميع أقسام وتصنيفات المكتبة</span>
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              اختر أي قسم لعرض أصنافه وتصفيته فوراً
-            </p>
+    <div className="max-w-7xl mx-auto px-4 pt-6 sm:pt-8 pb-28 lg:pb-16 space-y-6">
+      {/* =========================================================================
+          MODE 1: OVERVIEW MODE (When browsing all categories without filter)
+          Compact 2-Column Mobile Grid, 3-4 Columns Desktop with zero vertical bloat
+          ========================================================================= */}
+      {!isFocusedCategoryView && (
+        <section className="bg-white rounded-3xl border border-zinc-200/90 p-5 sm:p-7 shadow-xs space-y-5">
+          {/* Header Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
+            <div>
+              <h1 className="text-lg sm:text-2xl font-black text-zinc-900 flex items-center gap-2">
+                <span>📂</span>
+                <span>جميع أقسام وتصنيفات المتجر</span>
+              </h1>
+              <p className="text-xs text-zinc-500 mt-1">
+                اختر القسم المطلوب لاستعراض منتجاته وخدماته مباشرة بلمسة واحدة
+              </p>
+            </div>
+            <span className="self-start sm:self-center text-xs font-black text-zinc-700 bg-zinc-100 border border-zinc-200 px-3.5 py-1 rounded-full">
+              {categories.length} قسماً
+            </span>
           </div>
-          <span className="shrink-0 text-xs font-bold text-zinc-500 bg-zinc-50 border border-zinc-200 px-3 py-1 rounded-full">
-            {categories.length} قسماً
-          </span>
-        </div>
 
-        {categoriesLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div key={n} className="h-36 bg-zinc-100 rounded-2xl animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
+          {/* Compact Categories Grid (2 Columns on Mobile, 3 on Tablet, 4 on Desktop) */}
+          {categoriesLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <div key={n} className="h-28 bg-zinc-100 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {categories.map((cat) => (
+                <div
                   key={cat.id}
-                  type="button"
-                  onClick={() =>
-                    updateParam('cat', isSelected ? '' : cat.id, true)
-                  }
-                  className={`group bg-white hover:bg-zinc-50/70 border rounded-2xl p-5 flex flex-col items-center justify-center text-center gap-2.5 transition-all duration-200 hover:shadow-md active:scale-[0.99] ${
-                    isSelected
-                      ? 'border-zinc-900 ring-2 ring-zinc-900/10 bg-zinc-50/40'
-                      : 'border-zinc-200/80 hover:border-zinc-900'
-                  }`}
+                  onClick={() => handleSelectCategory(cat.id)}
+                  className="group bg-white hover:bg-zinc-50 border border-zinc-200/80 hover:border-black rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center gap-2 transition-all hover:shadow-md cursor-pointer active:scale-[0.98]"
                 >
-                  <div className="w-16 h-16 rounded-full overflow-hidden border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  {/* Category Image / Icon */}
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-zinc-100 bg-zinc-50 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                     {cat.imageUrl ? (
                       <img
                         src={cat.imageUrl}
@@ -148,105 +181,163 @@ export const CategoriesPage: React.FC = () => {
                         loading="lazy"
                       />
                     ) : (
-                      <span className="text-3xl leading-none">{cat.icon || '📦'}</span>
+                      <span className="text-2xl leading-none">{cat.icon || '📦'}</span>
                     )}
                   </div>
 
-                  <div className="space-y-1 max-w-full">
-                    <h2
-                      className={`font-black text-sm sm:text-base transition-colors line-clamp-1 ${
-                        isSelected ? 'text-[#c40d00]' : 'text-zinc-900 group-hover:text-[#c40d00]'
-                      }`}
-                    >
+                  {/* Clean 2-Line Title & Count */}
+                  <div className="space-y-1 w-full">
+                    <h2 className="font-black text-xs sm:text-sm text-zinc-900 group-hover:text-black line-clamp-2 leading-tight">
                       {cat.title}
                     </h2>
-                    {cat.description && (
-                      <p className="text-[11px] text-zinc-400 line-clamp-1 leading-relaxed">
-                        {cat.description}
-                      </p>
-                    )}
+                    <span className="inline-block text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
+                      {cat.productsCount || 0} منتج
+                    </span>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-      {/* ===== 2. PRODUCTS CATALOG SECTION ===== */}
-      <section ref={productsSectionRef} className="space-y-4">
-        {/* Header & Search/Sort Controls */}
-        <div className="bg-white p-5 rounded-3xl border border-[#ebebeb] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-zinc-900">
-              {activeCategoryObj ? activeCategoryObj.title : 'أصناف ومنتجات المكتبة'}
-            </h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              {totalCount > 0
-                ? `عرض ${products.length} من أصل ${totalCount} منتج متاح`
-                : 'استكشف كافة المنتجات'}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:w-72">
-              <input
-                type="text"
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-                placeholder="ابحث بالاسم أو العامية: مرسام، براية، دفتر سلك، حبر..."
-                className="w-full bg-zinc-50 border border-zinc-200 text-xs pr-8 pl-3 py-2.5 rounded-xl focus:outline-none focus:border-zinc-900"
-              />
-              <Search size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-            </form>
-
-            <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2.5 rounded-xl border border-zinc-200 text-xs">
-              <SlidersHorizontal size={14} className="text-zinc-400" />
-              <select
-                value={sortBy}
-                onChange={(e) => updateParam('sort', e.target.value)}
-                className="bg-transparent font-bold text-zinc-700 focus:outline-none"
+      {/* =========================================================================
+          MODE 2: FOCUSED CATEGORY VIEW (When a category is active)
+          Hides the 15 giant cards, provides instant category pills bar,
+          and renders products directly below with ZERO scrolling hacks!
+          ========================================================================= */}
+      {isFocusedCategoryView && (
+        <section className="space-y-5 animate-in fade-in duration-200">
+          {/* Focused Header Card with Back Button */}
+          <div className="bg-white rounded-3xl border border-zinc-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              {/* Back to All Categories Button */}
+              <button
+                type="button"
+                onClick={handleBackToAllCategories}
+                className="inline-flex items-center gap-1.5 text-xs font-black text-zinc-700 hover:text-black bg-zinc-100 hover:bg-zinc-200 px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
               >
-                <option value="newest">الأحدث وصولاً</option>
-                <option value="price_asc">السعر: من الأقل للأعلى</option>
-                <option value="price_desc">السعر: من الأعلى للأقل</option>
-                <option value="name">الاسم الأبجدي</option>
-              </select>
+                <ArrowRight size={15} />
+                <span>جميع الأقسام</span>
+              </button>
+
+              <span className="text-xs font-black text-zinc-800 bg-zinc-100 border border-zinc-200 px-3 py-1 rounded-full">
+                {totalCount} منتج متاح
+              </span>
+            </div>
+
+            {/* Active Category Info */}
+            <div className="flex items-center gap-3.5 pt-1">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden border border-zinc-200 bg-zinc-50 flex items-center justify-center shrink-0">
+                {activeCategoryObj?.imageUrl ? (
+                  <img
+                    src={activeCategoryObj.imageUrl}
+                    alt={activeCategoryObj.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl">{activeCategoryObj?.icon || '📦'}</span>
+                )}
+              </div>
+
+              <div>
+                <h1 className="text-base sm:text-xl font-black text-zinc-900">
+                  {activeCategoryObj?.title || 'منتجات القسم'}
+                </h1>
+                {activeCategoryObj?.description ? (
+                  <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1 leading-relaxed">
+                    {activeCategoryObj.description}
+                  </p>
+                ) : (
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    استعرض كافة الأصناف المتوفرة واطلبها مباشرة
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Compact Horizontal Scrollable Category Pills Bar (Switch categories with 1 tap) */}
+            <div className="pt-2 border-t border-zinc-100">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                {/* All categories pill */}
+                <button
+                  type="button"
+                  onClick={handleBackToAllCategories}
+                  className="shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl bg-zinc-100 text-zinc-700 hover:bg-zinc-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Grid size={13} />
+                  <span>عرض الكل</span>
+                </button>
+
+                {/* Individual category pills */}
+                {categories.map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
+
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => handleSelectCategory(cat.id)}
+                      className={`shrink-0 text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-black text-white font-black shadow-xs'
+                          : 'bg-white text-zinc-700 hover:bg-zinc-50 border border-zinc-200 font-bold'
+                      }`}
+                    >
+                      <span>{cat.icon || '📦'}</span>
+                      <span>{cat.title}</span>
+                      <span className="opacity-70 text-[10px]">({cat.productsCount || 0})</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+      )}
 
-        {/* Category Pills Filter Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-          <button
-            onClick={() => updateParam('cat', '')}
-            className={`shrink-0 text-xs font-bold px-4 py-2 rounded-xl transition-all ${
-              !selectedCategory
-                ? 'bg-black text-white shadow-sm'
-                : 'bg-white text-zinc-600 hover:bg-zinc-100 border border-zinc-200'
-            }`}
-          >
-            الكل ({totalCount > 0 && !selectedCategory ? totalCount : categories.reduce((acc, c) => acc + c.productsCount, 0)})
-          </button>
+      {/* =========================================================================
+          PRODUCTS SECTION & FILTER CONTROLS
+          Rendered directly below with Search, Sort, and Product Grid
+          ========================================================================= */}
+      <section className="space-y-4">
+        {/* Search & Sort Controls Bar */}
+        <div className="bg-white p-4 rounded-2xl border border-zinc-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Search Input */}
+          <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-80">
+            <input
+              type="text"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              placeholder="ابحث عن منتج بالاسم أو الكود..."
+              className="w-full bg-zinc-50 border border-zinc-200 text-xs pr-8 pl-3 py-2.5 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-colors"
+            />
+            <Search
+              size={14}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
+            />
+          </form>
 
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => updateParam('cat', cat.id)}
-              className={`shrink-0 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all ${
-                selectedCategory === cat.id
-                  ? 'bg-black text-white shadow-sm'
-                  : 'bg-white text-zinc-600 hover:bg-zinc-100 border border-zinc-200'
-              }`}
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-xl border border-zinc-200 text-xs w-full sm:w-auto justify-between sm:justify-start">
+            <div className="flex items-center gap-1.5 text-zinc-500 font-bold">
+              <SlidersHorizontal size={14} />
+              <span>الترتيب:</span>
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => updateParam('sort', e.target.value)}
+              className="bg-transparent font-black text-zinc-900 focus:outline-none cursor-pointer"
             >
-              <span>{cat.icon || '📦'}</span>
-              <span>{cat.title}</span>
-              <span className="opacity-75 text-[10px]">({cat.productsCount})</span>
-            </button>
-          ))}
+              <option value="newest">الأحدث وصولاً</option>
+              <option value="price_asc">السعر: من الأقل للأعلى</option>
+              <option value="price_desc">السعر: من الأعلى للأقل</option>
+              <option value="name">الاسم الأبجدي</option>
+            </select>
+          </div>
         </div>
 
-        {/* Products Grid */}
+        {/* Filtered Products Grid */}
         {productsLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 py-4">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
@@ -254,15 +345,20 @@ export const CategoriesPage: React.FC = () => {
             ))}
           </div>
         ) : products.length === 0 ? (
-          <div className="bg-white rounded-3xl p-16 text-center border border-[#ebebeb] space-y-3">
+          <div className="bg-white rounded-3xl p-12 sm:p-16 text-center border border-zinc-200/90 shadow-xs space-y-3">
             <div className="text-4xl">🔍</div>
-            <h3 className="font-extrabold text-base text-zinc-800">لم يتم العثور على أي منتج</h3>
-            <p className="text-xs text-zinc-400">جرب البحث بكلمات أخرى أو اختر قسماً آخر</p>
+            <h3 className="font-black text-sm sm:text-base text-zinc-900">
+              لم يتم العثور على أي منتج
+            </h3>
+            <p className="text-xs text-zinc-500 max-w-xs mx-auto">
+              جرب البحث بكلمات أخرى أو اختر قسماً آخر من شريط الأقسام أعلاه
+            </p>
             <button
-              onClick={clearFilters}
-              className="text-xs font-bold text-[#c40d00] hover:underline pt-2"
+              type="button"
+              onClick={handleBackToAllCategories}
+              className="text-xs font-bold text-emerald-600 hover:underline pt-2 cursor-pointer"
             >
-              إعادة تعيين الفلاتر
+              العودة لكافة الأقسام ✕
             </button>
           </div>
         ) : (
@@ -281,21 +377,23 @@ export const CategoriesPage: React.FC = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 pt-4">
             <button
+              type="button"
               onClick={() => updateParam('page', (page - 1).toString())}
               disabled={page <= 1}
-              className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 disabled:opacity-30 hover:bg-zinc-50"
+              className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 disabled:opacity-30 hover:bg-zinc-50 cursor-pointer"
             >
               <ChevronRight size={18} />
             </button>
 
-            <span className="text-xs font-bold text-zinc-600 px-3">
+            <span className="text-xs font-black text-zinc-700 px-3">
               صفحة {page} من {totalPages}
             </span>
 
             <button
+              type="button"
               onClick={() => updateParam('page', (page + 1).toString())}
               disabled={page >= totalPages}
-              className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 disabled:opacity-30 hover:bg-zinc-50"
+              className="p-2 rounded-xl bg-white border border-zinc-200 text-zinc-700 disabled:opacity-30 hover:bg-zinc-50 cursor-pointer"
             >
               <ChevronLeft size={18} />
             </button>
@@ -303,12 +401,14 @@ export const CategoriesPage: React.FC = () => {
         )}
       </section>
 
-      {/* Quick View Modal */}
-      <ProductModal
-        productId={selectedProduct?.id || null}
-        initialProduct={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
+      {/* Quick View Product Modal */}
+      {selectedProduct && (
+        <ProductModal
+          productId={selectedProduct.id}
+          initialProduct={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 };

@@ -51,6 +51,7 @@ export const App: React.FC = () => {
           {/* Public Store Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/categories/:categoryId" element={<CategoriesPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/:serviceSlug" element={<ServiceDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
