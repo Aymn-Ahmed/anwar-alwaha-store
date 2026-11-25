@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   ArrowRight,
+  MessageCircle,
 } from 'lucide-react';
 import { paymentsApi } from '../api/paymentsApi';
 import { PaymentStatusResponse } from '../types/payment.types';
@@ -102,6 +103,43 @@ export const PaymentCallbackPage: React.FC = () => {
   const isFailed =
     moyasarStatus?.toLowerCase() === 'failed' ||
     (paymentStatus && !paymentStatus.isPaid);
+
+  const STORE_WHATSAPP = '966572350050';
+  const matchingOrder = customer.orders.find((o) => o.orderCode === orderCode);
+
+  const buildPaidWhatsAppMessage = () => {
+    const lines: string[] = [];
+    lines.push(`🛍️ *تأكيد سداد طلب إلكترونياً — مكتبة أنوار الواحة*`);
+    lines.push(`🔢 *رقم الطلب:* ${paymentStatus?.orderCode || orderCode}`);
+    if (matchingOrder?.customerName || customer.name) {
+      lines.push(`👤 *الاسم:* ${(matchingOrder?.customerName || customer.name).trim()}`);
+    }
+    if (matchingOrder?.customerPhone || customer.phone) {
+      lines.push(`📱 *الجوال:* ${(matchingOrder?.customerPhone || customer.phone).trim()}`);
+    }
+    lines.push(`💳 *حالة الدفع:* تم السداد إلكترونياً بنجاح (مدفوع ✓)`);
+    if (paymentStatus?.totalAmount) {
+      lines.push(`💰 *المبلغ المسدد:* ${paymentStatus.totalAmount.toFixed(2)} ر.س`);
+    }
+    if (paymentStatus?.gatewayReferenceId) {
+      lines.push(`🧾 *مرجع السداد (Moyasar):* ${paymentStatus.gatewayReferenceId}`);
+    }
+    if (matchingOrder?.deliveryMethod) {
+      lines.push(
+        `📦 *طريقة الاستلام:* ${
+          matchingOrder.deliveryMethod === 'branch'
+            ? 'استلام من الفرع (خميس مشيط)'
+            : 'توصيل لموقعي (خميس مشيط / أبها)'
+        }`
+      );
+    }
+    if (matchingOrder?.customerAddress) {
+      lines.push(`📍 *العنوان:* ${matchingOrder.customerAddress}`);
+    }
+    lines.push(``);
+    lines.push(`⚡ أرجو تعجيل وتأكيد تجهيز الطلب.`);
+    return lines.join('\n');
+  };
 
   return (
     <div className="max-w-xl mx-auto px-4 py-12 pb-24 space-y-6">
@@ -206,6 +244,22 @@ export const PaymentCallbackPage: React.FC = () => {
                   قيد التجهيز والتنفيذ
                 </span>
               </div>
+            </div>
+
+            {/* Prominent High-Contrast Green WhatsApp Expedite Button */}
+            <div className="space-y-1.5 pt-1">
+              <a
+                href={`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(buildPaidWhatsAppMessage())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-sm py-4 px-6 rounded-2xl flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-600/30 active:scale-[0.99] transition-all"
+              >
+                <MessageCircle size={20} />
+                <span>⚡ تعجيل الطلب عبر واتساب (تأكيد وتجهيز فوري)</span>
+              </a>
+              <p className="text-[11px] text-zinc-400">
+                انقر لفتح محادثة واتساب مع المتجر مباشرة مرفقاً بها رقم الطلب وإشعار السداد الإلكتروني لسرعة التجهيز.
+              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">

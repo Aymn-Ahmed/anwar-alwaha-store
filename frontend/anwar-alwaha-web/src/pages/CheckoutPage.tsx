@@ -451,7 +451,7 @@ export const CheckoutPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 pb-24 lg:pb-14 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 py-6 pb-36 lg:pb-16 space-y-6">
       {/* 2-Step Focused Checkout Wizard Header */}
       <div className="bg-white rounded-2xl border border-[#ebebeb] p-3 sm:p-4 shadow-sm">
         <div className="flex items-center justify-between text-xs sm:text-sm">
@@ -505,7 +505,7 @@ export const CheckoutPage: React.FC = () => {
       {/* SCREEN 1: DELIVERY & LOCATION FOCUS (Single Screen) */}
       {/* ========================================================================= */}
       {currentStep === 1 && (
-        <form onSubmit={handleProceedToStep2} className="space-y-6 animate-in fade-in">
+        <form onSubmit={handleProceedToStep2} className="space-y-6 animate-in fade-in pb-28 sm:pb-8">
           {/* Delivery Method Choice */}
           <div className="bg-white rounded-3xl border border-[#ebebeb] p-5 sm:p-6 space-y-4 shadow-sm">
             <div className="border-b border-zinc-100 pb-3 flex items-center justify-between">
@@ -748,7 +748,7 @@ export const CheckoutPage: React.FC = () => {
       {/* SCREEN 2: PAYMENT & CONFIRMATION FOCUS (Single Screen) */}
       {/* ========================================================================= */}
       {currentStep === 2 && (
-        <div className="space-y-6 animate-in fade-in">
+        <div className="space-y-6 animate-in fade-in pb-28 sm:pb-8">
           {/* Top Return Button */}
           <div className="flex items-center justify-between">
             <button
