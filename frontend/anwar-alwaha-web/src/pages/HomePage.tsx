@@ -7,6 +7,7 @@ import { Category } from '../types/category.types';
 import { Product } from '../types/product.types';
 import { ProductCard } from '../components/products/ProductCard';
 import { ProductModal } from '../components/products/ProductModal';
+import { useIndependentScroll } from '../hooks/useIndependentScroll';
 
 // --- Hero slides (from backup design) ---
 const HERO_SLIDES = [
@@ -67,6 +68,15 @@ export const HomePage: React.FC = () => {
   const effectiveSearch = (searchQuery || urlSearch).trim();
   const isSearching = Boolean(effectiveSearch);
 
+  // Independent per-category scroll tracking & restoration
+  const activeCatKey = selectedCategory || 'all';
+  const { saveCurrentScroll } = useIndependentScroll({
+    activeKey: activeCatKey,
+    isLoading: loading,
+    resetDependencies: [effectiveSearch, page],
+    topOffset: 0,
+  });
+
   // Fetch categories independently so it never blocks products
   useEffect(() => {
     let isMounted = true;
@@ -125,6 +135,7 @@ export const HomePage: React.FC = () => {
   }, []);
 
   const handleSelectCategory = (catId: string | null) => {
+    saveCurrentScroll();
     setSelectedCategory(catId);
     setPage(1);
   };
@@ -150,6 +161,7 @@ export const HomePage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
+                saveCurrentScroll();
                 setSearchQuery('');
                 const next = new URLSearchParams(searchParams);
                 next.delete('search');

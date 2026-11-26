@@ -21,6 +21,7 @@ import { adminApi } from '../../api/adminApi';
 import { OrderAdminSummary } from '../../types/admin.types';
 import { OrderResponse } from '../../types/order.types';
 import { useToast } from '../../context/ToastContext';
+import { useIndependentScroll } from '../../hooks/useIndependentScroll';
 
 export const AdminOrdersPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,6 +54,14 @@ export const AdminOrdersPage: React.FC = () => {
   const page = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = 20;
 
+  // Independent per-tab scroll tracking
+  const { saveCurrentScroll } = useIndependentScroll({
+    activeKey: selectedStatus || 'all',
+    isLoading: loading,
+    resetDependencies: [searchQuery, page],
+    topOffset: 0,
+  });
+
   const { showToast } = useToast();
 
   const fetchOrders = async () => {
@@ -77,6 +86,7 @@ export const AdminOrdersPage: React.FC = () => {
   }, [selectedStatus, page]);
 
   const updateParam = (key: string, value: string) => {
+    saveCurrentScroll();
     const next = new URLSearchParams(searchParams);
     if (value) {
       next.set(key, value);

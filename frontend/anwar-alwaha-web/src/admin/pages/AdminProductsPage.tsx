@@ -36,6 +36,7 @@ import {
 } from '../../types/admin.types';
 import { BulkEditToolbar } from '../components/BulkEditToolbar';
 import { useToast } from '../../context/ToastContext';
+import { useIndependentScroll } from '../../hooks/useIndependentScroll';
 
 type InlineEditMode = null | 'all' | 'price' | 'name' | 'image' | 'category';
 type ViewMode = 'grid' | 'table';
@@ -74,6 +75,15 @@ export const AdminProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [imageFilter, setImageFilter] = useState<ImageFilterMode>('all');
   const [page, setPage] = useState(1);
+
+  // Independent scroll management per category / filter tab
+  const activeKey = `${selectedCategory || 'all'}_${imageFilter}`;
+  const { saveCurrentScroll } = useIndependentScroll({
+    activeKey,
+    isLoading: loading,
+    resetDependencies: [search, page],
+    topOffset: 0,
+  });
 
   // Selection for Bulk Edit
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -664,6 +674,7 @@ export const AdminProductsPage: React.FC = () => {
           <select
             value={selectedCategory}
             onChange={(e) => {
+              saveCurrentScroll();
               setSelectedCategory(e.target.value);
               setPage(1);
             }}
@@ -688,6 +699,7 @@ export const AdminProductsPage: React.FC = () => {
                 key={f.id}
                 type="button"
                 onClick={() => {
+                  saveCurrentScroll();
                   setImageFilter(f.id);
                   setPage(1);
                 }}

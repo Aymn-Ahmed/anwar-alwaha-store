@@ -16,6 +16,7 @@ import { Category } from '../types/category.types';
 import { Product } from '../types/product.types';
 import { ProductCard } from '../components/products/ProductCard';
 import { ProductModal } from '../components/products/ProductModal';
+import { useIndependentScroll } from '../hooks/useIndependentScroll';
 
 export const CategoriesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,6 +37,15 @@ export const CategoriesPage: React.FC = () => {
   const sortBy = (searchParams.get('sort') || 'newest') as any;
   const page = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = 20;
+
+  // Independent per-category scroll management
+  const activeCatKey = selectedCategory || 'all';
+  const { saveCurrentScroll } = useIndependentScroll({
+    activeKey: activeCatKey,
+    isLoading: productsLoading,
+    resetDependencies: [searchQuery, sortBy, page],
+    topOffset: 0,
+  });
 
   // 1. Fetch all store categories
   useEffect(() => {
@@ -92,8 +102,9 @@ export const CategoriesPage: React.FC = () => {
     setSearchParams(next);
   };
 
-  // Switch category directly with NO awkward scroll jumps
+  // Switch category directly with independent scroll saving & restoration
   const handleSelectCategory = (catId: string) => {
+    saveCurrentScroll();
     setLocalSearch('');
     if (routeCatId) {
       if (catId) {
@@ -104,12 +115,11 @@ export const CategoriesPage: React.FC = () => {
     } else {
       updateParam('cat', catId);
     }
-    // Scroll to top of viewport cleanly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Return to all categories overview
+  // Return to all categories overview with independent scroll saving & restoration
   const handleBackToAllCategories = () => {
+    saveCurrentScroll();
     setLocalSearch('');
     if (routeCatId) {
       navigate('/categories');
@@ -120,7 +130,6 @@ export const CategoriesPage: React.FC = () => {
       next.set('page', '1');
       setSearchParams(next);
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
