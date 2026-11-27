@@ -23,8 +23,13 @@ public class CouponsController : ControllerBase
     {
         var setting = await _context.StoreSettings.AsNoTracking().FirstOrDefaultAsync(s => s.Id == "general_settings", ct);
         bool show = setting?.ShowCouponField ?? false;
+        bool hideUnverified = setting?.HideUnverifiedPhotos ?? false;
 
-        return Ok(ApiResponse<StoreSettingsDto>.Ok(new StoreSettingsDto { ShowCouponField = show }));
+        return Ok(ApiResponse<StoreSettingsDto>.Ok(new StoreSettingsDto
+        {
+            ShowCouponField = show,
+            HideUnverifiedPhotos = hideUnverified
+        }));
     }
 
     [HttpPost("validate")]

@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { productsApi } from '../api/productsApi';
+import { couponsApi } from '../api/couponsApi';
 import { CatalogIndexItem } from '../types/product.types';
 import { normalizeArabic, tokenizeArabic } from '../utils/arabicNormalizer';
 
 interface CatalogCacheContextType {
   catalog: CatalogIndexItem[];
   isLoading: boolean;
+  hideUnverifiedPhotos: boolean;
   searchCatalog: (query: string, categoryId?: string, limit?: number) => CatalogIndexItem[];
   getSuggestions: (query: string, limit?: number) => string[];
   refreshCatalog: () => Promise<void>;
@@ -73,6 +75,7 @@ async function writeToIndexedDB(items: CatalogIndexItem[]): Promise<void> {
 export const CatalogCacheProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [catalog, setCatalog] = useState<CatalogIndexItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hideUnverifiedPhotos, setHideUnverifiedPhotos] = useState(false);
 
   // Pre-normalized search index for 0ms ultra-fast lookup
   const searchIndex = useMemo(() => {
@@ -87,10 +90,17 @@ export const CatalogCacheProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const fetchAndCacheCatalog = useCallback(async () => {
     try {
-      const items = await productsApi.getCatalogIndex();
+      const [items, settings] = await Promise.all([
+        productsApi.getCatalogIndex(),
+        couponsApi.getStoreSettings(),
+      ]);
+
       if (items && items.length > 0) {
         setCatalog(items);
         writeToIndexedDB(items);
+      }
+      if (settings) {
+        setHideUnverifiedPhotos(Boolean(settings.hideUnverifiedPhotos));
       }
     } catch {
       // Ignore background fetch errors
@@ -272,6 +282,7 @@ export const CatalogCacheProvider: React.FC<{ children: React.ReactNode }> = ({ 
       value={{
         catalog,
         isLoading,
+        hideUnverifiedPhotos,
         searchCatalog,
         getSuggestions,
         refreshCatalog: fetchAndCacheCatalog,

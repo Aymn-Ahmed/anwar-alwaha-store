@@ -12,9 +12,14 @@ import {
   Loader2,
   Sparkles,
   ArrowRight,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  ImageOff,
 } from 'lucide-react';
 import { adminApi } from '../../api/adminApi';
 import { categoriesApi } from '../../api/categoriesApi';
+import { couponsApi } from '../../api/couponsApi';
 import { Product, CatalogIndexItem } from '../../types/product.types';
 import { Category } from '../../types/category.types';
 import { useToast } from '../../context/ToastContext';
@@ -24,7 +29,7 @@ import { normalizeArabic } from '../../utils/arabicNormalizer';
 import { BarcodeScannerModal } from '../components/quick-photo/BarcodeScannerModal';
 import { QuickProductPhotoCardModal } from '../components/quick-photo/QuickProductPhotoCardModal';
 
-type FilterTab = 'all' | 'needs_photo' | 'has_photo';
+type FilterTab = 'all' | 'unverified_photo' | 'verified_photo' | 'no_photo';
 
 const PAGE_SIZE = 48;
 
@@ -34,6 +39,7 @@ const catalogItemToProduct = (item: CatalogIndexItem): Product => ({
   price: item.price,
   oldPrice: item.oldPrice ?? undefined,
   imageUrl: item.imageUrl || undefined,
+  isVerifiedPhoto: Boolean(item.isVerifiedPhoto),
   categoryId: item.categoryId,
   categoryTitle: item.categoryTitle || '',
   barcode: item.barcode || undefined,
@@ -54,9 +60,13 @@ export const AdminQuickPhotoPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<FilterTab>('needs_photo');
+  const [activeTab, setActiveTab] = useState<FilterTab>('unverified_photo');
   const [copiedBarcode, setCopiedBarcode] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Store Setting: Hide unverified scraped photos on storefront
+  const [hideUnverifiedPhotos, setHideUnverifiedPhotos] = useState(false);
+  const [updatingSetting, setUpdatingSetting] = useState(false);
 
   // Scanner & Quick Card Modals State
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -67,6 +77,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
 
   // Per-row Direct Camera Uploading State
   const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
+  const [verifyingProductId, setVerifyingProductId] = useState<string | null>(null);
   const rowCameraInputRef = useRef<HTMLInputElement | null>(null);
   const targetRowProductRef = useRef<Product | null>(null);
 
@@ -77,12 +88,19 @@ export const AdminQuickPhotoPage: React.FC = () => {
     }
   }, [catalog]);
 
-  // Load categories for the quick edit modal
+  // Load categories and store settings on mount
   useEffect(() => {
     categoriesApi
       .getAll()
       .then((cats) => {
         if (cats) setCategories(cats);
+      })
+      .catch(() => {});
+
+    couponsApi
+      .adminGetFullSettings()
+      .then((settings) => {
+        setHideUnverifiedPhotos(Boolean(settings?.hideUnverifiedPhotos));
       })
       .catch(() => {});
   }, []);
@@ -97,6 +115,27 @@ export const AdminQuickPhotoPage: React.FC = () => {
       showToast('تعذر تحديث الكتالوج', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Toggle hiding unverified photos on public storefront
+  const handleToggleHideUnverified = async () => {
+    try {
+      setUpdatingSetting(true);
+      const nextVal = !hideUnverifiedPhotos;
+      await couponsApi.adminUpdateFullSettings({ hideUnverifiedPhotos: nextVal });
+      setHideUnverifiedPhotos(nextVal);
+      showToast(
+        nextVal
+          ? 'تم تفعيل إخفاء الصور المسحوبة في المتجر حتى يتم تصويرها في المكتبة.'
+          : 'يتم الآن إظهار الصور المسحوبة في المتجر مع ملاحظة توضيحية للزبائن.',
+        'success'
+      );
+      refreshCatalog();
+    } catch (err: any) {
+      showToast(err.message || 'فشل تحديث إعداد المتجر', 'error');
+    } finally {
+      setUpdatingSetting(false);
     }
   };
 
@@ -131,7 +170,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
     [localProducts]
   );
 
-  // Direct Row Camera Snap & Update
+  // Direct Row Camera Snap & Update (Marks photo verified automatically)
   const handleTriggerRowCamera = (product: Product) => {
     targetRowProductRef.current = product;
     if (rowCameraInputRef.current) {
@@ -157,29 +196,58 @@ export const AdminQuickPhotoPage: React.FC = () => {
         mimeType: 'image/webp',
       });
 
-      // 2. Fast single-item quickPatch API call
+      // 2. Fast single-item quickPatch API call with IsVerifiedPhoto = true
       await adminApi.products.quickPatch([
         {
           id: targetProduct.id,
           imageUrl: compressed,
+          isVerifiedPhoto: true,
         },
       ]);
 
       // 3. Update local state immediately
       setLocalProducts((prev) =>
-        prev.map((p) => (p.id === targetProduct.id ? { ...p, imageUrl: compressed } : p))
+        prev.map((p) =>
+          p.id === targetProduct.id
+            ? { ...p, imageUrl: compressed, isVerifiedPhoto: true }
+            : p
+        )
       );
 
       // 4. Immediately sync IndexedDB catalog cache
       refreshCatalog();
 
-      showToast(`تم تحديث صورة "${targetProduct.name}" بنجاح!`, 'success');
+      showToast(`تم تصوير واعتماد صورة "${targetProduct.name}" بنجاح!`, 'success');
     } catch (err: any) {
       showToast(err.message || 'فشل تحديث الصورة', 'error');
     } finally {
       setUploadingProductId(null);
       targetRowProductRef.current = null;
       if (rowCameraInputRef.current) rowCameraInputRef.current.value = '';
+    }
+  };
+
+  // 1-Tap Quick Verify Existing Photo (For branded items like Casio or Roco)
+  const handleQuickVerifyPhoto = async (product: Product) => {
+    try {
+      setVerifyingProductId(product.id);
+      await adminApi.products.quickPatch([
+        {
+          id: product.id,
+          isVerifiedPhoto: true,
+        },
+      ]);
+
+      setLocalProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, isVerifiedPhoto: true } : p))
+      );
+
+      refreshCatalog();
+      showToast(`تم اعتماد صورة "${product.name}" كصورة مطابقة للمخزون ✓`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'فشل اعتماد الصورة', 'error');
+    } finally {
+      setVerifyingProductId(null);
     }
   };
 
@@ -208,11 +276,15 @@ export const AdminQuickPhotoPage: React.FC = () => {
     const normSearch = normalizeArabic(cleanSearch);
 
     return localProducts.filter((p) => {
+      const hasImg = Boolean(p.imageUrl && p.imageUrl.trim().length > 0);
+
       // 1. Tab Filter
-      if (activeTab === 'needs_photo') {
-        if (p.imageUrl && p.imageUrl.trim().length > 0) return false;
-      } else if (activeTab === 'has_photo') {
-        if (!p.imageUrl || p.imageUrl.trim().length === 0) return false;
+      if (activeTab === 'unverified_photo') {
+        if (!hasImg || p.isVerifiedPhoto) return false;
+      } else if (activeTab === 'verified_photo') {
+        if (!p.isVerifiedPhoto) return false;
+      } else if (activeTab === 'no_photo') {
+        if (hasImg) return false;
       }
 
       // 2. Search Filter (Supports Arabic Name, Keywords, and Barcode)
@@ -234,13 +306,27 @@ export const AdminQuickPhotoPage: React.FC = () => {
 
   // Tab Counts calculated from the entire 5,000+ product catalog
   const tabCounts = useMemo(() => {
-    let needs = 0;
-    let has = 0;
+    let verified = 0;
+    let unverified = 0;
+    let noPhoto = 0;
+
     for (const p of localProducts) {
-      if (p.imageUrl && p.imageUrl.trim().length > 0) has++;
-      else needs++;
+      const hasImg = Boolean(p.imageUrl && p.imageUrl.trim().length > 0);
+      if (p.isVerifiedPhoto) {
+        verified++;
+      } else if (hasImg) {
+        unverified++;
+      } else {
+        noPhoto++;
+      }
     }
-    return { all: localProducts.length, needs, has };
+
+    return {
+      all: localProducts.length,
+      verified,
+      unverified,
+      noPhoto,
+    };
   }, [localProducts]);
 
   // Pagination for buttery smooth 60fps mobile rendering
@@ -264,20 +350,20 @@ export const AdminQuickPhotoPage: React.FC = () => {
         className="hidden"
       />
 
-      {/* TOP HERO AISLE SCANNER CTA CARD (High-Contrast Light Corporate Style) */}
+      {/* 1. TOP HERO AISLE SCANNER CTA CARD (High-Contrast Light Corporate Style) */}
       <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-7 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold mb-2.5">
               <Sparkles size={13} className="text-emerald-600" />
-              <span>مساعد تصوير الأصناف بين الأرفف والممرات</span>
+              <span>مساعد تصوير وتوثيق الأصناف بين الأرفف والممرات</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              تحديث صور الأصناف (باركود + كاميرا الجوال)
+              تحديث وتوثيق صور الأصناف (باركود + كاميرا الجوال)
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-xl leading-relaxed">
               تجوّل في أرفف المكتبة بجوالك: امسح باركود أي صنف لتفتح الكاميرا فوراً، التقط صورة واضحة،
-              وسيتم ضغطها وتحديثها في المتجر خلال ثانية واحدة!
+              وسيتم اعتمادها كصورة حقيقية للمتجر واستبدال الصور المسحوبة آلياً بضغطة واحدة!
             </p>
           </div>
 
@@ -292,64 +378,130 @@ export const AdminQuickPhotoPage: React.FC = () => {
           </button>
         </div>
 
-        {/* High-Contrast Quick Stats Strip */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-3 border-t border-slate-100 text-center text-xs">
+        {/* 4-Box High-Contrast Quick Stats Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-3 border-t border-slate-100 text-center text-xs">
           <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/90 shadow-2xs">
             <span className="text-slate-600 block text-[11px] font-bold">إجمالي أصناف المتجر</span>
             <span className="text-slate-900 font-black text-base sm:text-lg">
               {tabCounts.all.toLocaleString('ar-SA')}
             </span>
           </div>
+
           <div className="p-3 bg-amber-50/90 rounded-2xl border border-amber-200 shadow-2xs">
-            <span className="text-amber-800 block text-[11px] font-bold">تحتاج تصوير ⚠️</span>
+            <span className="text-amber-800 block text-[11px] font-bold">صور مسحوبة (تحتاج تصوير) ⚠️</span>
             <span className="text-amber-800 font-black text-base sm:text-lg">
-              {tabCounts.needs.toLocaleString('ar-SA')}
+              {tabCounts.unverified.toLocaleString('ar-SA')}
             </span>
           </div>
+
           <div className="p-3 bg-emerald-50/90 rounded-2xl border border-emerald-200 shadow-2xs">
-            <span className="text-emerald-800 block text-[11px] font-bold">تم تصويرها ✅</span>
+            <span className="text-emerald-800 block text-[11px] font-bold">تم تصويرها واعتمادها ✅</span>
             <span className="text-emerald-800 font-black text-base sm:text-lg">
-              {tabCounts.has.toLocaleString('ar-SA')}
+              {tabCounts.verified.toLocaleString('ar-SA')}
+            </span>
+          </div>
+
+          <div className="p-3 bg-rose-50/90 rounded-2xl border border-rose-200 shadow-2xs">
+            <span className="text-rose-800 block text-[11px] font-bold">بدون صورة نهائياً 🚫</span>
+            <span className="text-rose-800 font-black text-base sm:text-lg">
+              {tabCounts.noPhoto.toLocaleString('ar-SA')}
             </span>
           </div>
         </div>
+
+        {/* Storefront Protection Rule Toggle Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90">
+          <div className="flex items-start gap-2.5">
+            <div className={`p-2 rounded-xl shrink-0 ${hideUnverifiedPhotos ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+              {hideUnverifiedPhotos ? <EyeOff size={18} /> : <Eye size={18} />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-900">
+                  سياسة عرض الصور غير المعتمدة في المتجر:
+                </span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${hideUnverifiedPhotos ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}`}>
+                  {hideUnverifiedPhotos ? 'مخفية عن الزبائن 🔒' : 'معروضة مع ملاحظة توضيحية ⚠️'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">
+                {hideUnverifiedPhotos
+                  ? 'الصور المسحوبة آلياً محجوبة في المتجر، ويظهر بدلها أيقونة القسم حتى يتم تصوير الصنف واعتماده بالمكتبة.'
+                  : 'تظهر الصور المسحوبة للزبائن مع تنبيه "صورة توضيحية — تتوفر أشكال/ألوان متعددة في المكتبة".'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            disabled={updatingSetting}
+            onClick={handleToggleHideUnverified}
+            className={`px-4 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer shrink-0 flex items-center justify-center gap-1.5 ${
+              hideUnverifiedPhotos
+                ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-600 shadow-xs'
+                : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-2xs'
+            }`}
+          >
+            {updatingSetting ? (
+              <RefreshCw size={13} className="animate-spin" />
+            ) : hideUnverifiedPhotos ? (
+              <Eye size={13} />
+            ) : (
+              <EyeOff size={13} />
+            )}
+            <span>{hideUnverifiedPhotos ? 'السماح بعرض الصور التوضيحية' : 'إخفاء الصور غير المعتمدة'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* FILTER TABS & SEARCH BAR (High-Contrast Light Theme) */}
+      {/* 2. FILTER TABS & SEARCH BAR (High-Contrast Light Theme) */}
       <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Quick Filter Tabs */}
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/80 overflow-x-auto scrollbar-none text-xs">
             <button
               type="button"
-              onClick={() => setActiveTab('needs_photo')}
-              className={`px-3.5 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'needs_photo'
+              onClick={() => setActiveTab('unverified_photo')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'unverified_photo'
                   ? 'bg-amber-600 text-white shadow-xs font-black'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <AlertCircle size={13} />
-              <span>تحتاج تصوير ({tabCounts.needs.toLocaleString('ar-SA')})</span>
+              <span>صور مسحوبة ({tabCounts.unverified.toLocaleString('ar-SA')})</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab('has_photo')}
-              className={`px-3.5 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'has_photo'
+              onClick={() => setActiveTab('verified_photo')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'verified_photo'
                   ? 'bg-emerald-600 text-white shadow-xs font-black'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <CheckCircle size={13} />
-              <span>تم تحديث صورتها ({tabCounts.has.toLocaleString('ar-SA')})</span>
+              <span>تم تصويرها واعتمادها ({tabCounts.verified.toLocaleString('ar-SA')})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('no_photo')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'no_photo'
+                  ? 'bg-rose-600 text-white shadow-xs font-black'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ImageOff size={13} />
+              <span>بدون صورة ({tabCounts.noPhoto.toLocaleString('ar-SA')})</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('all')}
-              className={`px-3.5 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === 'all'
                   ? 'bg-slate-900 text-white shadow-xs font-black'
                   : 'text-slate-600 hover:text-slate-900'
@@ -366,7 +518,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
               onClick={handleRefresh}
               disabled={loading}
               className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-bold flex items-center gap-1.5 border border-slate-200 disabled:opacity-50"
-              title="تحديث البيانات من الخادم"
+              title="تحديث ومزامنة البيانات من الخادم"
             >
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               <span>مزامنة الكتالوج</span>
@@ -374,7 +526,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Instant Search Bar (Arabic Name, Keywords, Barcode across all 5,000+ items) */}
+        {/* Instant Search Bar */}
         <div className="relative">
           <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -396,7 +548,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
         </div>
       </div>
 
-      {/* PRODUCTS LIST (CARDS / ROWS) */}
+      {/* 3. PRODUCTS LIST (CARDS / ROWS) */}
       {isInitialLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -429,6 +581,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
             {paginatedProducts.map((product) => {
               const hasImage = Boolean(product.imageUrl && product.imageUrl.trim().length > 0);
               const isRowUploading = uploadingProductId === product.id;
+              const isRowVerifying = verifyingProductId === product.id;
 
               return (
                 <div
@@ -449,7 +602,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
                       ) : (
                         <div className="text-center text-slate-400">
                           <ImageIcon size={22} className="mx-auto text-slate-300" />
-                          <span className="text-[9px] block text-amber-700 font-bold">بدون صورة</span>
+                          <span className="text-[9px] block text-rose-600 font-bold">بدون صورة</span>
                         </div>
                       )}
 
@@ -462,19 +615,27 @@ export const AdminQuickPhotoPage: React.FC = () => {
 
                     {/* Name, Price & Barcode */}
                     <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center justify-between gap-1 flex-wrap">
                         <span className="text-xs font-black text-emerald-700 font-mono">
                           {product.price} ر.س
                         </span>
-                        <span
-                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                            hasImage
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                          }`}
-                        >
-                          {hasImage ? 'صورة معتمدة' : 'يحتاج تصوير'}
-                        </span>
+
+                        {/* Distinct Photo State Badges */}
+                        {product.isVerifiedPhoto ? (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                            <ShieldCheck size={11} className="text-emerald-600" />
+                            <span>صورة المحل المعتمدة ✓</span>
+                          </span>
+                        ) : hasImage ? (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1">
+                            <AlertCircle size={10} className="text-amber-600" />
+                            <span>صورة مسحوبة آلياً</span>
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                            بدون صورة
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="font-bold text-xs text-slate-900 line-clamp-2 leading-tight">
@@ -505,7 +666,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Bottom Row: Direct Snap Button & Card Edit */}
+                  {/* Bottom Row: Direct Snap Button & 1-Tap Verify & Card Edit */}
                   <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
                     {/* Direct Camera Button */}
                     <button
@@ -522,10 +683,28 @@ export const AdminQuickPhotoPage: React.FC = () => {
                       ) : (
                         <>
                           <Camera size={13} />
-                          <span>📷 تصوير وتحديث</span>
+                          <span>📷 {product.isVerifiedPhoto ? 'إعادة تصوير' : 'تصوير واعتماد'}</span>
                         </>
                       )}
                     </button>
+
+                    {/* 1-Tap Fast Verify for Scraped Photos (Casio, Roco, Standard Brands) */}
+                    {!product.isVerifiedPhoto && hasImage && (
+                      <button
+                        type="button"
+                        disabled={isRowVerifying}
+                        onClick={() => handleQuickVerifyPhoto(product)}
+                        className="py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+                        title="اعتماد هذه الصورة كصورة مطابقة لمخزون المتجر دون إعادة تصويرها"
+                      >
+                        {isRowVerifying ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Check size={12} />
+                        )}
+                        <span>اعتماد ✓</span>
+                      </button>
+                    )}
 
                     {/* Open Detail Card */}
                     <button
@@ -535,7 +714,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
                         setActiveProductForCard(product);
                         setQuickCardOpen(true);
                       }}
-                      className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-colors cursor-pointer"
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-colors cursor-pointer shrink-0"
                       title="تعديل تفاصيل الصنف"
                     >
                       <ArrowRight size={14} />

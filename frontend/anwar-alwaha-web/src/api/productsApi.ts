@@ -62,6 +62,7 @@ export const productsApi = {
         price: p.price,
         oldPrice: p.oldPrice,
         imageUrl: p.imageUrl,
+        isVerifiedPhoto: p.isVerifiedPhoto,
         categoryId: p.categoryId,
         categoryTitle: p.categoryTitle,
         barcode: p.barcode,

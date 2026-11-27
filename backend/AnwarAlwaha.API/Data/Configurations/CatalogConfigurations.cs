@@ -55,5 +55,6 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasIndex(p => p.Barcode);
         builder.Property(p => p.SearchKeywords).HasColumnName("search_keywords").HasColumnType("text");
         builder.Property(p => p.ImageFetchAttempted).HasDefaultValue(false);
+        builder.Property(p => p.IsVerifiedPhoto).HasDefaultValue(false);
     }
 }

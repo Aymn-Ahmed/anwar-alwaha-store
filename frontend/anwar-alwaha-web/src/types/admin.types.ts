@@ -50,6 +50,7 @@ export interface BulkProductUpdateItem {
   clearOldPrice?: boolean;
   categoryId?: string;
   imageUrl?: string;
+  isVerifiedPhoto?: boolean;
   stockQuantity?: number;
   isActive?: boolean;
 }
@@ -61,6 +62,7 @@ export interface QuickProductPatch {
   discountPercent?: number;
   categoryId?: string;
   imageUrl?: string;
+  isVerifiedPhoto?: boolean;
   barcode?: string;
 }
 
@@ -70,6 +72,7 @@ export interface ProductCreateUpdate {
   barcode?: string;
   searchKeywords?: string;
   imageUrl?: string;
+  isVerifiedPhoto?: boolean;
   tikTokVideoId?: string;
   price: number;
   oldPrice?: number;

@@ -191,8 +191,13 @@ public class AdminCouponsController : ControllerBase
     {
         var setting = await _context.StoreSettings.FirstOrDefaultAsync(s => s.Id == "general_settings", ct);
         bool showCoupon = setting?.ShowCouponField ?? false;
+        bool hideUnverified = setting?.HideUnverifiedPhotos ?? false;
 
-        return Ok(ApiResponse<StoreSettingsDto>.Ok(new StoreSettingsDto { ShowCouponField = showCoupon }));
+        return Ok(ApiResponse<StoreSettingsDto>.Ok(new StoreSettingsDto
+        {
+            ShowCouponField = showCoupon,
+            HideUnverifiedPhotos = hideUnverified
+        }));
     }
 
     [HttpPut("settings")]
@@ -206,6 +211,7 @@ public class AdminCouponsController : ControllerBase
             {
                 Id = "general_settings",
                 ShowCouponField = dto.ShowCouponField,
+                HideUnverifiedPhotos = dto.HideUnverifiedPhotos,
                 UpdatedAt = DateTime.UtcNow
             };
             await _context.StoreSettings.AddAsync(setting, ct);
@@ -213,14 +219,19 @@ public class AdminCouponsController : ControllerBase
         else
         {
             setting.ShowCouponField = dto.ShowCouponField;
+            setting.HideUnverifiedPhotos = dto.HideUnverifiedPhotos;
             setting.UpdatedAt = DateTime.UtcNow;
         }
 
         await _context.SaveChangesAsync(ct);
 
         return Ok(ApiResponse<StoreSettingsDto>.Ok(
-            new StoreSettingsDto { ShowCouponField = setting.ShowCouponField },
-            setting.ShowCouponField ? "تم تفعيل إظهار حقل الكوبون للزبائن." : "تم إخفاء حقل الكوبون عن الزبائن."
+            new StoreSettingsDto
+            {
+                ShowCouponField = setting.ShowCouponField,
+                HideUnverifiedPhotos = setting.HideUnverifiedPhotos
+            },
+            "تم تحديث إعدادات المتجر بنجاح."
         ));
     }
 }

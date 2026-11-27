@@ -4,6 +4,7 @@ export interface CatalogIndexItem {
   price: number;
   oldPrice?: number | null;
   imageUrl?: string | null;
+  isVerifiedPhoto?: boolean;
   categoryId: string;
   categoryTitle?: string | null;
   barcode?: string | null;
@@ -19,6 +20,7 @@ export interface Product {
   barcode?: string;
   searchKeywords?: string;
   imageUrl?: string;
+  isVerifiedPhoto?: boolean;
   tikTokVideoId?: string;
   price: number;
   oldPrice?: number;

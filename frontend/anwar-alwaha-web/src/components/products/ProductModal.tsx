@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Heart,
   ShieldCheck,
+  AlertCircle,
 } from 'lucide-react';
 import { Product, ProductDetail } from '../../types/product.types';
 import { ProductReview } from '../../types/review.types';
@@ -18,6 +19,7 @@ import { PriceTag } from '../common/PriceTag';
 import { StarRating } from '../common/StarRating';
 import { useCart } from '../../context/CartContext';
 import { useCustomer } from '../../context/CustomerContext';
+import { useCatalogCache } from '../../context/CatalogCacheContext';
 
 interface ProductModalProps {
   productId: string | null;
@@ -50,6 +52,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useCustomer();
+  const { hideUnverifiedPhotos } = useCatalogCache();
 
   useEffect(() => {
     if (!effectiveId) {
@@ -107,6 +110,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
   const displayProduct = product || (initialProduct ? toProductDetail(initialProduct) : null);
   const liked = displayProduct ? isInWishlist(displayProduct.id) : false;
+
+  const isPhotoVerified = Boolean(displayProduct?.isVerifiedPhoto);
+  const hasRawImage = Boolean(displayProduct?.imageUrl);
+  const shouldShowImage = hasRawImage && (!hideUnverifiedPhotos || isPhotoVerified);
 
   const computedReviewsCount =
     reviews.length > 0 ? reviews.length : displayProduct?.reviewsCount || 0;
@@ -181,40 +188,58 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <>
               {/* Product Media & Basic Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-200/70 flex flex-col items-center justify-center gap-2">
-                    {displayProduct.imageUrl ? (
-                      <img
-                        src={displayProduct.imageUrl}
-                        alt={displayProduct.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <>
-                        <span className="text-6xl leading-none">
-                          {displayProduct.categoryIcon || '📦'}
-                        </span>
-                        {displayProduct.categoryTitle && (
-                          <span className="text-xs font-bold text-zinc-400 px-3 text-center">
-                            {displayProduct.categoryTitle}
-                          </span>
+                    <div className="space-y-3">
+                      <div className="aspect-square rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-200/70 flex flex-col items-center justify-center gap-2 p-2">
+                        {shouldShowImage ? (
+                          <img
+                            src={displayProduct.imageUrl!}
+                            alt={displayProduct.name}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-center p-4">
+                            <span className="text-6xl leading-none mb-2">
+                              {displayProduct.categoryIcon || '📦'}
+                            </span>
+                            {displayProduct.categoryTitle && (
+                              <span className="text-xs font-bold text-zinc-500 px-3">
+                                {displayProduct.categoryTitle}
+                              </span>
+                            )}
+                            <span className="text-[11px] font-medium text-zinc-400 mt-2">
+                              جاري تجهيز الصورة المعتمدة من أرفف المكتبة قريباً
+                            </span>
+                          </div>
                         )}
-                      </>
-                    )}
-                  </div>
+                      </div>
 
-                  {displayProduct.tikTokVideoId && (
-                    <a
-                      href={`https://www.tiktok.com/@anwaralwaha/video/${displayProduct.tikTokVideoId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-center gap-2 bg-black text-white text-xs font-bold py-2.5 px-3 rounded-xl hover:bg-zinc-800 transition-colors shadow-sm"
-                    >
-                      <span>مشاهدة استعراض المنتج على تيك توك 🎵</span>
-                      <ExternalLink size={13} />
-                    </a>
-                  )}
-                </div>
+                      {/* Photo verification / clarification badge */}
+                      {shouldShowImage && (
+                        isPhotoVerified ? (
+                          <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl">
+                            <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+                            <span>صورة حقيقية معتمدة ومطابقة لمنتج المكتبة ✓</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+                            <AlertCircle size={16} className="text-amber-600 shrink-0" />
+                            <span>صورة توضيحية — تتوفر أشكال وموديلات متعددة في المكتبة</span>
+                          </div>
+                        )
+                      )}
+
+                      {displayProduct.tikTokVideoId && (
+                        <a
+                          href={`https://www.tiktok.com/@anwaralwaha/video/${displayProduct.tikTokVideoId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-2 bg-black text-white text-xs font-bold py-2.5 px-3 rounded-xl hover:bg-zinc-800 transition-colors shadow-sm"
+                        >
+                          <span>مشاهدة استعراض المنتج على تيك توك 🎵</span>
+                          <ExternalLink size={13} />
+                        </a>
+                      )}
+                    </div>
 
                 <div className="flex flex-col justify-between space-y-4">
                   <div>

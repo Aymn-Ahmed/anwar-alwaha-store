@@ -15,6 +15,7 @@ public class Product : BaseEntity
     public int StockQuantity { get; set; } = 100;
     public bool IsActive { get; set; } = true;
     public bool ImageFetchAttempted { get; set; } = false;
+    public bool IsVerifiedPhoto { get; set; } = false;
 
     // Optimistic Concurrency Token (PostgreSQL xmin system column)
     public uint Version { get; set; }

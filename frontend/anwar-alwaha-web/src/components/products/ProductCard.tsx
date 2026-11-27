@@ -4,6 +4,7 @@ import { Product } from '../../types/product.types';
 import { PriceTag } from '../common/PriceTag';
 import { useCart } from '../../context/CartContext';
 import { useCustomer } from '../../context/CustomerContext';
+import { useCatalogCache } from '../../context/CatalogCacheContext';
 
 interface ProductCardProps {
   product: Product;
@@ -16,8 +17,13 @@ const FALLBACK_IMG =
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useCustomer();
+  const { hideUnverifiedPhotos } = useCatalogCache();
 
   const liked = isInWishlist(product.id);
+
+  const isPhotoVerified = Boolean(product.isVerifiedPhoto);
+  const hasRawImage = Boolean(product.imageUrl);
+  const shouldShowImage = hasRawImage && (!hideUnverifiedPhotos || isPhotoVerified);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,9 +49,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
     >
       {/* Image */}
       <div className="relative aspect-square w-full overflow-hidden bg-zinc-50">
-        {product.imageUrl ? (
+        {shouldShowImage ? (
           <img
-            src={product.imageUrl}
+            src={product.imageUrl!}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
@@ -80,12 +86,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
           <Heart size={15} className={liked ? 'fill-[#fa2c19]' : ''} />
         </button>
 
-        {/* Discount badge - top right */}
-        {discountText && (
-          <span className="absolute top-2 right-2 bg-[#c40d00] text-white text-[10px] font-black px-2 py-0.5 rounded-sm">
-            {discountText}
-          </span>
-        )}
+        {/* Badges container - top right */}
+        <div className="absolute top-2 right-2 z-10 flex flex-col items-end gap-1">
+          {discountText && (
+            <span className="bg-[#c40d00] text-white text-[10px] font-black px-2 py-0.5 rounded-sm shadow-xs">
+              {discountText}
+            </span>
+          )}
+          {shouldShowImage && (
+            isPhotoVerified ? (
+              <span className="bg-emerald-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs backdrop-blur-xs">
+                معتمدة ✓
+              </span>
+            ) : (
+              <span className="bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs backdrop-blur-xs">
+                صورة توضيحية
+              </span>
+            )
+          )}
+        </div>
 
         {/* Category badge - bottom right */}
         {product.categoryTitle && (

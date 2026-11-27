@@ -62,4 +62,5 @@ public class ValidateCouponResponseDto
 public class StoreSettingsDto
 {
     public bool ShowCouponField { get; set; }
+    public bool HideUnverifiedPhotos { get; set; }
 }

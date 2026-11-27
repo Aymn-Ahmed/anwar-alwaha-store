@@ -278,8 +278,12 @@ using (var scope = app.Services.CreateScope())
                     "CREATE TABLE IF NOT EXISTS store_settings (" +
                     "  \"Id\" character varying(50) PRIMARY KEY, " +
                     "  \"ShowCouponField\" boolean NOT NULL DEFAULT false, " +
+                    "  \"HideUnverifiedPhotos\" boolean NOT NULL DEFAULT false, " +
                     "  \"UpdatedAt\" timestamp with time zone NOT NULL DEFAULT (now() at time zone 'utc')" +
-                    ");");
+                    "); " +
+                    "ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS \"HideUnverifiedPhotos\" boolean NOT NULL DEFAULT false; " +
+                    "ALTER TABLE products ADD COLUMN IF NOT EXISTS \"IsVerifiedPhoto\" boolean NOT NULL DEFAULT false; " +
+                    "ALTER TABLE \"Products\" ADD COLUMN IF NOT EXISTS \"IsVerifiedPhoto\" boolean NOT NULL DEFAULT false;");
                 await context.Database.MigrateAsync();
 
                 if (!await context.StoreSettings.AnyAsync())

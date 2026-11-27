@@ -19,6 +19,7 @@ public class ProductDto
     public int SortOrder { get; set; }
     public int StockQuantity { get; set; }
     public bool IsActive { get; set; }
+    public bool IsVerifiedPhoto { get; set; }
     public double AverageRating { get; set; }
     public int ReviewsCount { get; set; }
 }
@@ -30,6 +31,7 @@ public class CatalogIndexItemDto
     public decimal Price { get; set; }
     public decimal? OldPrice { get; set; }
     public string? ImageUrl { get; set; }
+    public bool IsVerifiedPhoto { get; set; }
     public string CategoryId { get; set; } = string.Empty;
     public string? CategoryTitle { get; set; }
     public string? Barcode { get; set; }
@@ -64,6 +66,7 @@ public class ProductCreateUpdateDto
     public int SortOrder { get; set; } = 0;
     public int StockQuantity { get; set; } = 100;
     public bool IsActive { get; set; } = true;
+    public bool? IsVerifiedPhoto { get; set; }
 }
 
 public class BulkProductUpdateItemDto
@@ -77,6 +80,7 @@ public class BulkProductUpdateItemDto
     public string? ImageUrl { get; set; }
     public int? StockQuantity { get; set; }
     public bool? IsActive { get; set; }
+    public bool? IsVerifiedPhoto { get; set; }
 }
 
 public class QuickProductPatchDto
@@ -87,6 +91,7 @@ public class QuickProductPatchDto
     public int? DiscountPercent { get; set; }
     public string? CategoryId { get; set; }
     public string? ImageUrl { get; set; }
+    public bool? IsVerifiedPhoto { get; set; }
 }
 
 public class ProductQueryParamsDto

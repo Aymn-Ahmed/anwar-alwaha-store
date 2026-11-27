@@ -40,6 +40,7 @@ export interface ValidateCouponResult {
 
 export interface StoreSettingsResponse {
   showCouponField: boolean;
+  hideUnverifiedPhotos: boolean;
 }
 
 export const couponsApi = {
@@ -50,6 +51,15 @@ export const couponsApi = {
       return Boolean(res.data.data?.showCouponField);
     } catch {
       return false; // Safe default: hidden
+    }
+  },
+
+  getStoreSettings: async (): Promise<StoreSettingsResponse> => {
+    try {
+      const res = await apiClient.get<ApiResponse<StoreSettingsResponse>>('/coupons/settings');
+      return res.data.data || { showCouponField: false, hideUnverifiedPhotos: false };
+    } catch {
+      return { showCouponField: false, hideUnverifiedPhotos: false };
     }
   },
 
@@ -97,10 +107,23 @@ export const couponsApi = {
     return Boolean(res.data.data?.showCouponField);
   },
 
-  adminUpdateSettings: async (showCouponField: boolean): Promise<boolean> => {
-    const res = await apiClient.put<ApiResponse<StoreSettingsResponse>>('/admin/coupons/settings', {
-      showCouponField,
-    });
+  adminGetFullSettings: async (): Promise<StoreSettingsResponse> => {
+    const res = await apiClient.get<ApiResponse<StoreSettingsResponse>>('/admin/coupons/settings');
+    return res.data.data || { showCouponField: false, hideUnverifiedPhotos: false };
+  },
+
+  adminUpdateSettings: async (
+    settings: boolean | { showCouponField?: boolean; hideUnverifiedPhotos?: boolean }
+  ): Promise<boolean> => {
+    const payload = typeof settings === 'boolean' ? { showCouponField: settings } : settings;
+    const res = await apiClient.put<ApiResponse<StoreSettingsResponse>>('/admin/coupons/settings', payload);
     return Boolean(res.data.data?.showCouponField);
+  },
+
+  adminUpdateFullSettings: async (
+    settings: { showCouponField?: boolean; hideUnverifiedPhotos?: boolean }
+  ): Promise<StoreSettingsResponse> => {
+    const res = await apiClient.put<ApiResponse<StoreSettingsResponse>>('/admin/coupons/settings', settings);
+    return res.data.data || { showCouponField: false, hideUnverifiedPhotos: false };
   },
 };

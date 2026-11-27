@@ -47,6 +47,7 @@ export const QuickProductPhotoCardModal: React.FC<QuickProductPhotoCardModalProp
   const [price, setPrice] = useState<string>('');
   const [categoryId, setCategoryId] = useState('');
   const [photoDataUrl, setPhotoDataUrl] = useState<string>('');
+  const [isVerified, setIsVerified] = useState(true);
   const [isCompressing, setIsCompressing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavedSuccess, setIsSavedSuccess] = useState(false);
@@ -59,11 +60,13 @@ export const QuickProductPhotoCardModal: React.FC<QuickProductPhotoCardModalProp
       setPrice(existingProduct.price !== undefined ? existingProduct.price.toString() : '');
       setCategoryId(existingProduct.categoryId || (categories[0]?.id ?? ''));
       setPhotoDataUrl(existingProduct.imageUrl || '');
+      setIsVerified(existingProduct.isVerifiedPhoto ?? true);
     } else {
       setName('');
       setPrice('');
       setCategoryId(categories[0]?.id || '');
       setPhotoDataUrl('');
+      setIsVerified(true);
     }
     setIsSavedSuccess(false);
   }, [existingProduct, barcode, categories]);
@@ -93,6 +96,7 @@ export const QuickProductPhotoCardModal: React.FC<QuickProductPhotoCardModalProp
       });
 
       setPhotoDataUrl(compressed);
+      setIsVerified(true);
       showToast('تم التقاط وضغط الصورة بنجاح!', 'success');
     } catch (err: any) {
       showToast(err.message || 'فشل التقاط الصورة من الكاميرا', 'error');
@@ -128,6 +132,7 @@ export const QuickProductPhotoCardModal: React.FC<QuickProductPhotoCardModalProp
             price: parsedPrice,
             categoryId: categoryId || undefined,
             imageUrl: photoDataUrl || undefined,
+            isVerifiedPhoto: isVerified,
             barcode: barcode || undefined,
           },
         ]);
@@ -138,6 +143,7 @@ export const QuickProductPhotoCardModal: React.FC<QuickProductPhotoCardModalProp
           price: parsedPrice,
           categoryId: categoryId || existingProduct.categoryId,
           imageUrl: photoDataUrl || existingProduct.imageUrl,
+          isVerifiedPhoto: isVerified,
           barcode: barcode || existingProduct.barcode,
         };
 
@@ -151,6 +157,7 @@ export const QuickProductPhotoCardModal: React.FC<QuickProductPhotoCardModalProp
           barcode: barcode || undefined,
           price: parsedPrice,
           imageUrl: photoDataUrl || undefined,
+          isVerifiedPhoto: isVerified,
           stockQuantity: 100,
           sortOrder: 0,
           isActive: true,
@@ -359,6 +366,24 @@ export const QuickProductPhotoCardModal: React.FC<QuickProductPhotoCardModalProp
               </div>
             </div>
           </div>
+
+          {/* Verified Photo Toggle */}
+          <label className="flex items-start gap-2.5 bg-gray-900/90 p-3 rounded-2xl border border-gray-800 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isVerified}
+              onChange={(e) => setIsVerified(e.target.checked)}
+              className="mt-0.5 rounded text-emerald-500 focus:ring-emerald-400 w-4 h-4 cursor-pointer"
+            />
+            <div>
+              <span className="text-xs font-black text-white block">
+                اعتماد الصورة كصورة حقيقية للمحل ✓
+              </span>
+              <span className="text-[10px] text-gray-400 block leading-tight mt-0.5">
+                فعّل هذا الخيار للأصناف بعد تصويرها بالجوال، أو للمنتجات القياسية المطابقة تماماً للمخزون (مثل حاسبات كاسيو أو ورق روكو).
+              </span>
+            </div>
+          </label>
 
           {/* Bottom Actions */}
           <div className="pt-3 border-t border-gray-800 space-y-2">

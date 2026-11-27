@@ -13,5 +13,6 @@ public class StoreSettingConfiguration : IEntityTypeConfiguration<StoreSetting>
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).HasMaxLength(50);
         builder.Property(s => s.ShowCouponField).HasDefaultValue(false);
+        builder.Property(s => s.HideUnverifiedPhotos).HasDefaultValue(false);
     }
 }

@@ -39,6 +39,7 @@ public class ProductService : IProductService
                 p.Price,
                 p.OldPrice,
                 p.ImageUrl,
+                p.IsVerifiedPhoto,
                 p.CategoryId,
                 p.Barcode,
                 p.SearchKeywords
@@ -52,6 +53,7 @@ public class ProductService : IProductService
             Price = p.Price,
             OldPrice = p.OldPrice,
             ImageUrl = p.ImageUrl,
+            IsVerifiedPhoto = p.IsVerifiedPhoto,
             CategoryId = p.CategoryId,
             CategoryTitle = categoryMap.TryGetValue(p.CategoryId, out var title) ? title : null,
             Barcode = p.Barcode,
@@ -240,6 +242,7 @@ public class ProductService : IProductService
                     SortOrder = x.Row.SortOrder,
                     StockQuantity = x.Row.StockQuantity,
                     IsActive = x.Row.IsActive,
+                    IsVerifiedPhoto = x.Row.IsVerifiedPhoto,
                     AverageRating = 5.0,
                     ReviewsCount = 0
                 })
@@ -282,6 +285,7 @@ public class ProductService : IProductService
                 p.SortOrder,
                 p.StockQuantity,
                 p.IsActive,
+                p.IsVerifiedPhoto,
                 ApprovedReviewsCount = p.Reviews.Count(r => r.IsApproved),
                 ApprovedReviewsAvg = p.Reviews.Where(r => r.IsApproved).Select(r => (double?)r.Rating).Average()
             })
@@ -309,6 +313,7 @@ public class ProductService : IProductService
                 SortOrder = p.SortOrder,
                 StockQuantity = p.StockQuantity,
                 IsActive = p.IsActive,
+                IsVerifiedPhoto = p.IsVerifiedPhoto,
                 AverageRating = p.ApprovedReviewsAvg ?? 5.0,
                 ReviewsCount = p.ApprovedReviewsCount
             };
@@ -415,6 +420,7 @@ public class ProductService : IProductService
             SortOrder = product.SortOrder,
             StockQuantity = product.StockQuantity,
             IsActive = product.IsActive,
+            IsVerifiedPhoto = product.IsVerifiedPhoto,
             AverageRating = avgRating,
             ReviewsCount = reviewsCount
         };
@@ -436,6 +442,7 @@ public class ProductService : IProductService
                         CategoryIcon = categoryIcon,
                         Name = c.Name,
                         ImageUrl = c.ImageUrl,
+                        IsVerifiedPhoto = c.IsVerifiedPhoto,
                         Price = c.Price,
                         OldPrice = c.OldPrice,
                         StockQuantity = c.StockQuantity,
@@ -464,11 +471,13 @@ public class ProductService : IProductService
             ? dto.SearchKeywords.Trim()
             : await _keywordEnrichment.GenerateKeywordsForProductAsync(dto.Name, category.Title, useGoogleAutocomplete: true);
 
+        bool isVerified = dto.IsVerifiedPhoto ?? (!string.IsNullOrWhiteSpace(dto.ImageUrl));
         var product = new Product
         {
             Id = Guid.NewGuid(),
             CategoryId = dto.CategoryId,
             Name = dto.Name.Trim(),
+            Barcode = dto.Barcode?.Trim(),
             SearchKeywords = keywords,
             ImageUrl = dto.ImageUrl?.Trim(),
             TikTokVideoId = dto.TikTokVideoId?.Trim(),
@@ -476,7 +485,8 @@ public class ProductService : IProductService
             OldPrice = dto.OldPrice,
             SortOrder = dto.SortOrder,
             StockQuantity = dto.StockQuantity,
-            IsActive = dto.IsActive
+            IsActive = dto.IsActive,
+            IsVerifiedPhoto = isVerified
         };
 
         await _unitOfWork.Products.AddAsync(product);
@@ -489,6 +499,7 @@ public class ProductService : IProductService
             CategoryTitle = category.Title,
             CategoryIcon = category.Icon,
             Name = product.Name,
+            Barcode = product.Barcode,
             SearchKeywords = product.SearchKeywords,
             ImageUrl = product.ImageUrl,
             TikTokVideoId = product.TikTokVideoId,
@@ -500,6 +511,7 @@ public class ProductService : IProductService
             SortOrder = product.SortOrder,
             StockQuantity = product.StockQuantity,
             IsActive = product.IsActive,
+            IsVerifiedPhoto = product.IsVerifiedPhoto,
             AverageRating = 5.0,
             ReviewsCount = 0
         };
@@ -531,6 +543,16 @@ public class ProductService : IProductService
         product.SortOrder = dto.SortOrder;
         product.StockQuantity = dto.StockQuantity;
         product.IsActive = dto.IsActive;
+
+        if (dto.Barcode != null)
+        {
+            product.Barcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim();
+        }
+
+        if (dto.IsVerifiedPhoto.HasValue)
+        {
+            product.IsVerifiedPhoto = dto.IsVerifiedPhoto.Value;
+        }
 
         if (dto.SearchKeywords != null)
         {
@@ -565,6 +587,7 @@ public class ProductService : IProductService
             SortOrder = product.SortOrder,
             StockQuantity = product.StockQuantity,
             IsActive = product.IsActive,
+            IsVerifiedPhoto = product.IsVerifiedPhoto,
             AverageRating = 5.0,
             ReviewsCount = 0
         };
@@ -655,6 +678,9 @@ public class ProductService : IProductService
 
                 if (item.ImageUrl != null)
                     prod.ImageUrl = item.ImageUrl;
+
+                if (item.IsVerifiedPhoto.HasValue)
+                    prod.IsVerifiedPhoto = item.IsVerifiedPhoto.Value;
 
                 if (item.StockQuantity.HasValue)
                     prod.StockQuantity = item.StockQuantity.Value;
@@ -753,6 +779,16 @@ public class ProductService : IProductService
             if (item.ImageUrl != null)
             {
                 prod.ImageUrl = string.IsNullOrWhiteSpace(item.ImageUrl) ? null : item.ImageUrl.Trim();
+                modified = true;
+                if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                {
+                    prod.IsVerifiedPhoto = true;
+                }
+            }
+
+            if (item.IsVerifiedPhoto.HasValue)
+            {
+                prod.IsVerifiedPhoto = item.IsVerifiedPhoto.Value;
                 modified = true;
             }
 
