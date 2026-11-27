@@ -16,6 +16,11 @@ import {
   BookOpen,
   Scissors,
   PenTool,
+  Monitor,
+  CreditCard,
+  Heart,
+  PenLine,
+  FileCheck,
   LucideIcon,
 } from 'lucide-react';
 
@@ -56,8 +61,20 @@ const ICON_MAP: Record<string, LucideIcon> = {
   book: BookOpen,
   'book-open': BookOpen,
   scissors: Scissors,
-  pen: PenTool,
+  pen: PenLine,
   'pen-tool': PenTool,
+  'pen-line': PenLine,
+  monitor: Monitor,
+  web: Monitor,
+  website: Monitor,
+  computer: Monitor,
+  'credit-card': CreditCard,
+  card: CreditCard,
+  nfc: CreditCard,
+  heart: Heart,
+  wedding: Heart,
+  'file-check': FileCheck,
+  turnitin: FileCheck,
 };
 
 export const SERVICE_ICON_OPTIONS = [

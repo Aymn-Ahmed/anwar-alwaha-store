@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, MessageCircle, ArrowLeft, ArrowUpRight, Check, Sparkles } from 'lucide-react';
+import { X, MessageCircle, ArrowLeft, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { servicesApi } from '../api/servicesApi';
 import { ServiceItem } from '../types/service.types';
@@ -181,7 +181,7 @@ const OFFICIAL_STORE_SERVICES: ServiceItem[] = [
     description:
       'طباعة بنرات إعلانية وتجارية ومدرسية، رول أب ستاند (85×200 سم)، قص استكرات إلكتروني (Plotter)، استكرات جدارية، ولوحات فلين وفوركس وباركود QR.',
     iconName: 'printer',
-    accentColor: '#0284c7',
+    accentColor: '#0284c7', // Bright blue
     mediaType: 'tiktok',
     mediaUrl: 'https://www.tiktok.com/@anwaralwaha_1/video/7578203989804633351',
     linkedCategoryId: 'dept_print',
@@ -196,7 +196,7 @@ const OFFICIAL_STORE_SERVICES: ServiceItem[] = [
     description:
       'تصميم وطباعة وتركيب اللوحات المدرسية، لوحات الفصول والأنشطة، لوحات المواد، مجسمات الأكشاك (3D Booths)، مجسمات فلين ومطويات، وملفات إنجاز المعلمين.',
     iconName: 'graduation-cap',
-    accentColor: '#059669',
+    accentColor: '#10b981', // Mint emerald
     mediaType: 'image',
     mediaUrl: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=800&q=80',
     linkedCategoryId: 'dept_school',
@@ -211,7 +211,7 @@ const OFFICIAL_STORE_SERVICES: ServiceItem[] = [
     description:
       'رسم جداريات المدارس والروضات الميدانية، خط عربي أصيل للوحات التكريم والشواهد، رسم مسارات الألعاب الحركية التفاعلية بساحات المدارس والحدائق.',
     iconName: 'palette',
-    accentColor: '#d97706',
+    accentColor: '#d97706', // Golden amber
     mediaType: 'image',
     mediaUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=800&q=80',
     linkedCategoryId: 'dept_art',
@@ -226,7 +226,7 @@ const OFFICIAL_STORE_SERVICES: ServiceItem[] = [
     description:
       'طباعة أكمام أكواب القهوة والمشروبات (Cup Sleeves)، ثيمات المواليد والأعراس والمناسبات الوطنية، تغليف وتنسيق علب المياه، وتوزيعات تفعيل الحروف المدرسية للأطفال.',
     iconName: 'coffee',
-    accentColor: '#9333ea',
+    accentColor: '#f43f5e', // Pink rose
     mediaType: 'image',
     mediaUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80',
     linkedCategoryId: 'dept_themes',
@@ -241,7 +241,7 @@ const OFFICIAL_STORE_SERVICES: ServiceItem[] = [
     description:
       'بنرات التخرج الكبيرة للتصوير واستقبال الضيوف، تصاميم فلين مفرغة بصورة واسم الخريج، دروع تكريمية فاخرة محفورة، أوشحة وقبعات ملكية، وأطقم هدايا حصرية.',
     iconName: 'award',
-    accentColor: '#c40d00',
+    accentColor: '#78350f', // Deep graduation brown/gold
     mediaType: 'image',
     mediaUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80',
     linkedCategoryId: 'dept_grad',
@@ -256,7 +256,7 @@ const OFFICIAL_STORE_SERVICES: ServiceItem[] = [
     description:
       'توفير كافة مستلزمات الطلاب والمعلمين، حقائب مدرسية، دفاتر وملازم، ألوان فنية وأقمشة كانفس، وتصوير وتجليد المذكرات والبحوث المدرسية والجامعية بجودة ليزرية فائقة.',
     iconName: 'file-text',
-    accentColor: '#4f46e5',
+    accentColor: '#64748b', // Slate gray
     mediaType: 'image',
     mediaUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80',
     linkedCategoryId: 'dept_stationery',
@@ -293,7 +293,7 @@ export const ServicesPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Smooth scroll when preview drawer opens
+  // Smooth scroll into view when preview drawer opens
   useEffect(() => {
     if (selectedServiceId && previewRef.current) {
       previewRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -373,10 +373,11 @@ export const ServicesPage: React.FC = () => {
     window.open(`https://wa.me/966572350050?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  // Compute RTL horizontal position (`right` %) for upward pointer arrow
-  const getArrowRightPercent = (colIndex: number): string => {
-    const pct = ((colIndex + 0.5) / 3) * 100;
-    return `${pct.toFixed(2)}%`;
+  // Mathematically exact RTL alignment for the speech bubble upward arrow
+  const getArrowRight = (colIndex: number): string => {
+    if (colIndex === 0) return 'calc(16.67% - 10px)';
+    if (colIndex === 1) return 'calc(50% - 10px)';
+    return 'calc(83.33% - 10px)';
   };
 
   const handleNavigateToServiceDetail = (service: ServiceItem) => {
@@ -386,46 +387,40 @@ export const ServicesPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pt-5 sm:pt-8 pb-28 lg:pb-16 px-3 sm:px-4">
-      <div className="max-w-xl mx-auto space-y-5">
+    <div className="min-h-screen bg-white sm:bg-[#fafafa] pt-6 sm:pt-10 pb-28 lg:pb-16 px-4">
+      <div className="max-w-md mx-auto space-y-6 sm:space-y-7">
         {/* Top Header Badge & Headline (Exact UI from user screenshots) */}
-        <div className="text-center space-y-2 pt-2">
-          <div className="inline-flex items-center gap-1.5 bg-black text-white text-[11px] sm:text-xs font-black px-4 py-1.5 rounded-full shadow-xs">
+        <div className="text-center space-y-2.5 pt-1">
+          <div className="inline-flex items-center gap-1.5 bg-black text-white text-[11px] sm:text-xs font-black px-4 py-1.5 rounded-full shadow-xs select-none">
             <span className="text-[#F59E0B]">⚡</span>
-            <span>خدمات وأقسام مكتبة أنوار الواحة</span>
+            <span>خدمات بلس الأكاديمية والمهنية</span>
           </div>
-          <h1 className="text-lg sm:text-2xl font-black text-zinc-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight select-none">
             اضغط على الخدمة لمعاينة تفاصيلها
           </h1>
-          <p className="text-[11px] sm:text-xs text-zinc-500 max-w-sm mx-auto">
-            تصفح خدماتنا واضغط لمعاينة الخيارات ونماذج الأعمال وطلب الخدمة بلمسة واحدة
-          </p>
         </div>
 
-        {/* 3-Column Circular Services Grid (Matching Screenshot Layout) */}
+        {/* 3-Column Circular Services Grid (Pure circles, zero rectangular outer card) */}
         {loading ? (
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="grid grid-cols-3 gap-y-6 gap-x-3">
             {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div
-                key={n}
-                className="bg-white rounded-2xl border border-zinc-200 p-4 flex flex-col items-center gap-2 animate-pulse"
-              >
-                <div className="w-14 h-14 rounded-full bg-zinc-200" />
-                <div className="w-16 h-2.5 bg-zinc-200 rounded" />
+              <div key={n} className="flex flex-col items-center gap-2 animate-pulse">
+                <div className="w-[74px] h-[74px] rounded-full bg-zinc-200" />
+                <div className="w-16 h-3 bg-zinc-200 rounded" />
               </div>
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {serviceRows.map((row, rowIdx) => {
               const activeColIndex = row.findIndex((s) => s.id === selectedServiceId);
               const activeServiceInRow = activeColIndex !== -1 ? row[activeColIndex] : null;
 
               return (
-                <div key={rowIdx} className="space-y-3">
-                  {/* Grid of 3 Circular Services */}
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    {row.map((service) => {
+                <div key={rowIdx} className="space-y-4">
+                  {/* Grid of 3 Pure Circular Services */}
+                  <div className="grid grid-cols-3 gap-y-6 gap-x-2 sm:gap-x-4">
+                    {row.map((service, colIdx) => {
                       const isSelected = selectedServiceId === service.id;
                       const color = service.accentColor || '#0284c7';
 
@@ -437,68 +432,70 @@ export const ServicesPage: React.FC = () => {
                               prev === service.id ? null : service.id
                             )
                           }
-                          className={`bg-white rounded-2xl border transition-all cursor-pointer p-3 sm:p-4 flex flex-col items-center text-center gap-2 relative select-none ${
-                            isSelected
-                              ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md bg-emerald-50/15'
-                              : 'border-zinc-200/90 shadow-xs hover:border-emerald-400 hover:shadow-sm'
-                          }`}
+                          className="flex flex-col items-center text-center cursor-pointer select-none group"
                         >
-                          {/* Circular Container with Colored Bottom Arc */}
+                          {/* Pure Circular Button (Clear, Elegant, Clean) */}
                           <div className="relative">
                             <div
-                              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-transform hover:scale-105 relative"
+                              className="w-[74px] h-[74px] sm:w-[86px] sm:h-[86px] rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-105 relative"
                               style={{
-                                backgroundColor: isSelected ? `${color}18` : `${color}0c`,
-                                boxShadow: isSelected ? `0 0 0 2px ${color}` : undefined,
+                                backgroundColor: isSelected ? `${color}14` : '#FFFFFF',
+                                boxShadow: isSelected
+                                  ? `0 0 0 3px ${color}, 0 6px 16px -2px ${color}40`
+                                  : '0 2px 8px rgba(0,0,0,0.04)',
                               }}
                             >
-                              {/* Colored Bottom Arc SVG Overlay */}
+                              {/* Sleek SVG Ring with Bottom Colored Arc */}
                               <svg
                                 className="absolute inset-0 w-full h-full pointer-events-none"
                                 viewBox="0 0 100 100"
                               >
+                                {/* Full circular outline */}
                                 <circle
                                   cx="50"
                                   cy="50"
                                   r="44"
                                   fill="none"
                                   stroke={isSelected ? color : '#E2E8F0'}
-                                  strokeWidth={isSelected ? '2' : '1.5'}
-                                  strokeOpacity={isSelected ? 0.4 : 0.6}
+                                  strokeWidth={isSelected ? '3.5' : '2'}
+                                  strokeOpacity={isSelected ? 1 : 0.85}
                                 />
-                                <path
-                                  d="M 14 68 A 44 44 0 0 0 86 68"
-                                  fill="none"
-                                  stroke={color}
-                                  strokeWidth="4"
-                                  strokeLinecap="round"
-                                />
+                                {/* Bottom colored arc (Only in idle state to accentuate the circle) */}
+                                {!isSelected && (
+                                  <path
+                                    d="M 13.5 75 A 44 44 0 0 0 86.5 75"
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                  />
+                                )}
                               </svg>
 
                               {/* Centered Clean Contextual Icon */}
-                              <div className="relative z-10">
+                              <div className="relative z-10 text-zinc-800 transition-transform duration-200 group-hover:scale-110">
                                 <ServiceIcon
                                   iconName={service.iconName}
-                                  size={24}
-                                  color={color}
+                                  size={28}
+                                  color={isSelected ? color : '#1e293b'}
                                 />
                               </div>
                             </div>
 
-                            {/* Active Red Indicator Dot on Top-Right (as shown in user screenshot) */}
+                            {/* Active Red Indicator Dot on Top-Right corner (as shown in user screenshots) */}
                             {isSelected && (
-                              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#FA2C19] border-2 border-white shadow-xs animate-in zoom-in" />
+                              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#EF4444] border-2 border-white shadow-xs z-20 animate-in zoom-in-75 duration-150" />
                             )}
                           </div>
 
-                          {/* Service Title */}
-                          <h3
-                            className={`text-[11px] sm:text-xs font-black line-clamp-2 leading-tight transition-colors ${
-                              isSelected ? 'text-emerald-700' : 'text-zinc-900'
+                          {/* Concise Clean Title directly under the circle */}
+                          <span
+                            className={`mt-2.5 text-xs sm:text-[13px] font-bold leading-tight max-w-[95px] sm:max-w-[110px] line-clamp-2 transition-colors ${
+                              isSelected ? 'text-zinc-950 font-black' : 'text-zinc-700 group-hover:text-black'
                             }`}
                           >
                             {service.title}
-                          </h3>
+                          </span>
                         </div>
                       );
                     })}
@@ -508,13 +505,13 @@ export const ServicesPage: React.FC = () => {
                   {activeServiceInRow && (
                     <div
                       ref={previewRef}
-                      className="relative w-full bg-white rounded-3xl border border-zinc-200/90 shadow-xl p-4 sm:p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200"
+                      className="relative w-full bg-white rounded-[26px] sm:rounded-[30px] border border-zinc-200/90 shadow-2xl p-4 sm:p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200"
                     >
-                      {/* Upward Pointer Caret aligned directly to clicked card in RTL */}
+                      {/* Upward Pointer Caret aligned directly to clicked circle in RTL */}
                       <div
-                        className="absolute -top-2 w-4 h-4 bg-white border-t border-l border-zinc-200 rotate-45 translate-x-1/2 transition-all duration-300 z-10"
+                        className="absolute -top-2.5 w-5 h-5 bg-white border-t border-r border-zinc-200/90 rotate-[-45deg] transition-all duration-300 z-10"
                         style={{
-                          right: getArrowRightPercent(activeColIndex),
+                          right: getArrowRight(activeColIndex),
                         }}
                       />
 
@@ -524,7 +521,7 @@ export const ServicesPage: React.FC = () => {
                           <span
                             className="w-2.5 h-2.5 rounded-full shrink-0"
                             style={{
-                              backgroundColor: activeServiceInRow.accentColor || '#059669',
+                              backgroundColor: activeServiceInRow.accentColor || '#10b981',
                             }}
                           />
                           <h2 className="text-xs sm:text-sm font-black text-zinc-900 truncate">
@@ -560,10 +557,10 @@ export const ServicesPage: React.FC = () => {
                                 <div
                                   key={opt.id}
                                   onClick={() => setSelectedOptionTitle(opt.title)}
-                                  className={`shrink-0 w-44 sm:w-52 rounded-2xl overflow-hidden border cursor-pointer transition-all snap-start flex flex-col justify-between ${
+                                  className={`shrink-0 w-44 sm:w-52 rounded-2xl overflow-hidden border cursor-pointer transition-all snap-start flex flex-col justify-between bg-white ${
                                     isCurrentSelected
-                                      ? 'border-emerald-500 ring-2 ring-emerald-500/30 shadow-md bg-white'
-                                      : 'border-zinc-200 bg-zinc-50/60 hover:border-zinc-300'
+                                      ? 'border-2 border-black shadow-md'
+                                      : 'border-zinc-200 hover:border-zinc-300'
                                   }`}
                                 >
                                   {/* Media Image / Visual Container */}
@@ -587,14 +584,14 @@ export const ServicesPage: React.FC = () => {
 
                                     {/* Top-Right Tag Badge */}
                                     {opt.tag && (
-                                      <span className="absolute top-2 right-2 bg-black/75 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
+                                      <span className="absolute top-2 right-2 bg-black/80 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
                                         {opt.tag}
                                       </span>
                                     )}
 
                                     {/* Top-Left 'Selected' Pill Badge */}
                                     {isCurrentSelected && (
-                                      <span className="absolute top-2 left-2 bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
+                                      <span className="absolute top-2 left-2 bg-[#059669] text-white text-[9px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
                                         <Check size={10} strokeWidth={3} />
                                         <span>محدد</span>
                                       </span>
@@ -649,7 +646,7 @@ export const ServicesPage: React.FC = () => {
                                   key={opt.id}
                                   type="button"
                                   onClick={() => setSelectedOptionTitle(opt.title)}
-                                  className={`text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                  className={`text-[11px] sm:text-xs font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
                                     isCurrent
                                       ? 'bg-black text-white border-black shadow-xs font-black'
                                       : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
@@ -666,26 +663,18 @@ export const ServicesPage: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Database Description */}
-                      {activeServiceInRow.description && (
-                        <p className="text-[11px] sm:text-xs text-zinc-600 leading-relaxed bg-zinc-50 p-3 rounded-xl border border-zinc-100">
-                          {activeServiceInRow.description}
-                        </p>
-                      )}
-
-                      {/* Actions Row: Full-width Emerald Button 'المزيد ←' + WhatsApp */}
+                      {/* Primary Button: 'المزيد ←' (Matching Screenshot) */}
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-                        {/* Primary Button: Navigate directly to /services/:serviceSlug */}
                         <button
                           type="button"
                           onClick={() => handleNavigateToServiceDetail(activeServiceInRow)}
                           className="flex-1 bg-[#059669] hover:bg-[#047857] text-white font-black text-xs sm:text-sm py-3 px-5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-700/20 active:scale-[0.99] cursor-pointer"
                         >
-                          <span>المزيد وتفاصيل الخدمة</span>
+                          <span>المزيد</span>
                           <ArrowLeft size={15} />
                         </button>
 
-                        {/* Fast WhatsApp CTA */}
+                        {/* WhatsApp Fast CTA */}
                         <button
                           type="button"
                           onClick={() =>

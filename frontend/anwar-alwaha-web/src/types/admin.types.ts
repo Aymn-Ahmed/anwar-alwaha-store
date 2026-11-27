@@ -61,11 +61,13 @@ export interface QuickProductPatch {
   discountPercent?: number;
   categoryId?: string;
   imageUrl?: string;
+  barcode?: string;
 }
 
 export interface ProductCreateUpdate {
   categoryId: string;
   name: string;
+  barcode?: string;
   searchKeywords?: string;
   imageUrl?: string;
   tikTokVideoId?: string;

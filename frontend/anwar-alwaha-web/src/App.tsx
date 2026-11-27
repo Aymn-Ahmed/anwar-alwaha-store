@@ -24,6 +24,7 @@ import { ProtectedAdminRoute } from './admin/ProtectedAdminRoute';
 import { AdminLoginPage } from './admin/pages/AdminLoginPage';
 import { AdminDashboardPage } from './admin/pages/AdminDashboardPage';
 import { AdminProductsPage } from './admin/pages/AdminProductsPage';
+import { AdminQuickPhotoPage } from './admin/pages/AdminQuickPhotoPage';
 import { AdminCategoriesPage } from './admin/pages/AdminCategoriesPage';
 import { AdminComplementsPage } from './admin/pages/AdminComplementsPage';
 import { AdminServicesPage } from './admin/pages/AdminServicesPage';
@@ -70,6 +71,7 @@ export const App: React.FC = () => {
             <Route element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />
               <Route path="products" element={<AdminProductsPage />} />
+              <Route path="quick-photo" element={<AdminQuickPhotoPage />} />
               <Route path="categories" element={<AdminCategoriesPage />} />
               <Route path="complements" element={<AdminComplementsPage />} />
               <Route path="services" element={<AdminServicesPage />} />

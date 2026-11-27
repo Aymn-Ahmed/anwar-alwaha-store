@@ -3,6 +3,7 @@ import { NavLink, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
+  Camera,
   Layers,
   ShoppingBag,
   Star,
@@ -28,6 +29,7 @@ interface AdminSidebarProps {
 const NAV_ITEMS = [
   { to: '/admin', label: 'لوحة الإحصائيات', icon: LayoutDashboard, end: true },
   { to: '/admin/products', label: 'إدارة المنتجات', icon: Package },
+  { to: '/admin/quick-photo', label: 'تحديث صور الأصناف 📷', icon: Camera },
   { to: '/admin/categories', label: 'إدارة الأقسام', icon: Layers },
   { to: '/admin/complements', label: 'التكميل والربط 🔗', icon: Link2 },
   { to: '/admin/services', label: 'إدارة الخدمات', icon: Zap },
