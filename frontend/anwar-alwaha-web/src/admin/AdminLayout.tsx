@@ -9,7 +9,6 @@ import {
   ExternalLink,
   ShieldCheck,
   QrCode,
-  Camera,
 } from 'lucide-react';
 import { AdminSidebar } from './components/AdminSidebar';
 import { StoreQrPosterModal } from './components/StoreQrPosterModal';
@@ -216,16 +215,6 @@ export const AdminLayout: React.FC = () => {
               <QrCode size={14} className="text-amber-400" />
               <span>باركود المتجر للطباعة 🏷️</span>
             </button>
-
-            {/* Quick Photo & Barcode Studio */}
-            <Link
-              to="/admin/quick-photo"
-              className="px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-              title="تحديث صور الأصناف السريع بالكاميرا والباركود"
-            >
-              <Camera size={14} className="text-emerald-400" />
-              <span className="hidden sm:inline">تحديث صور الأصناف 📷</span>
-            </Link>
 
             {/* 4. Preview Storefront in New Tab */}
             <Link
