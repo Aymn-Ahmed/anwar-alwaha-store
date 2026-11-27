@@ -61,6 +61,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
   // Scanner & Quick Card Modals State
   const [scannerOpen, setScannerOpen] = useState(false);
   const [quickCardOpen, setQuickCardOpen] = useState(false);
+  const [sessionUpdatedCount, setSessionUpdatedCount] = useState(0);
   const [scannedBarcode, setScannedBarcode] = useState('');
   const [activeProductForCard, setActiveProductForCard] = useState<Product | null>(null);
 
@@ -116,7 +117,7 @@ export const AdminQuickPhotoPage: React.FC = () => {
   const handleBarcodeScanned = useCallback(
     (barcode: string) => {
       setScannedBarcode(barcode);
-      setScannerOpen(false);
+      // Keep scannerOpen = true to keep camera warm underneath for instant next-item resume!
 
       // Search across ALL 5,000+ products in localProducts
       const cleanBarcode = barcode.trim().toLowerCase();
@@ -193,6 +194,9 @@ export const AdminQuickPhotoPage: React.FC = () => {
       }
       return [updated, ...prev];
     });
+
+    // Increment live session updated count
+    setSessionUpdatedCount((prev) => prev + 1);
 
     // Refresh store catalog cache
     refreshCatalog();
@@ -579,10 +583,16 @@ export const AdminQuickPhotoPage: React.FC = () => {
         </>
       )}
 
-      {/* 1. BARCODE SCANNER MODAL */}
+      {/* 1. FULL-SCREEN HARDWARE BARCODE SCANNER WORKSPACE */}
       <BarcodeScannerModal
         isOpen={scannerOpen}
-        onClose={() => setScannerOpen(false)}
+        isDetectionPaused={quickCardOpen}
+        sessionCount={sessionUpdatedCount}
+        onClose={() => {
+          setScannerOpen(false);
+          setQuickCardOpen(false);
+          setSessionUpdatedCount(0);
+        }}
         onBarcodeDetected={handleBarcodeScanned}
       />
 
@@ -594,7 +604,10 @@ export const AdminQuickPhotoPage: React.FC = () => {
         existingProduct={activeProductForCard}
         categories={categories}
         onProductUpdated={handleProductUpdatedFromModal}
-        onScanNext={() => setScannerOpen(true)}
+        onScanNext={() => {
+          setQuickCardOpen(false);
+          setScannerOpen(true);
+        }}
       />
     </div>
   );
